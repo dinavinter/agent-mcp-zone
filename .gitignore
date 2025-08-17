@@ -8,4 +8,13 @@ node_modules/
 *.key
 keys/
 env
-*.env
+.env
+.env.*
+.key-*.txt
+.key
+.key.txt
+.env.local
+aspirate-state.json
+aspirate-output/
+aspirate-output
+secrets.sh

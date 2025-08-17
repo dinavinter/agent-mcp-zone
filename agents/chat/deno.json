@@ -1,0 +1,13 @@
+{
+  "imports": {
+  },
+  "tasks": {
+    "start": "deno serve --allow-net --allow-env --env-file=.env --port $PORT client.tsx",
+    "start:main": "deno run --env-file=.env -A main.tsx"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "npm:hono/jsx"
+  },
+  "nodeModulesDir": "auto"
+}

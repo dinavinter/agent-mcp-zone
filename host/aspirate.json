@@ -1,0 +1,17 @@
+{
+  "WithPrivateRegistry": true,
+  
+  "TemplatePath": "./templates",
+  "ContainerSettings": {
+    "Registry": "scai-dev.common.repositories.cloud.sap",
+    "RepositoryPrefix": "aspire-ai",
+    "PrivateRegistry": true,
+    "PrivateRegistryEmail": "reposscai@sap.com",
+    "Tags": [
+      "latest"
+    ],
+    "Builder": "docker",
+    "BuildArgs": ["--platform=linux/amd64", "platform=linux/amd64"],
+    "Context": null
+  }
+}

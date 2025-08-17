@@ -1,0 +1,17 @@
+{
+  "name": "ai-core-proxy",
+  "version": "1.0.0",
+  "description": "Simple proxy server for SAP AI Core",
+  "main": "server.ts",
+ 
+  "imports": {
+    "oak": "https://deno.land/x/oak@v13.2.5/mod.ts"
+  },
+  "tasks": {
+    "client": "deno run --allow-net --allow-env --allow-read --node-modules-dir  test-client.tsx",
+    "start-client-server": "PORT=3002 deno task start &  AI_CORE_PROXY_URL=http://localhost:3030 deno task client",
+    "start": "deno run --allow-net --allow-env --allow-read --env-file=.env server.ts",
+    "dev": "deno run --allow-net --allow-env --allow-read --env-file=.env --watch server.ts ",
+    "test": "deno run --allow-net --allow-env --env-file=.env test.ts"
+  }
+}

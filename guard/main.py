@@ -23,4 +23,4 @@ proxy = FastMCP.as_proxy(
 
 # Run the proxy (e.g., via stdio for Claude Desktop)
 if __name__ == "__main__":
-    proxy.run(transport="http", host="0.0.0.0", port=os.getenv("PORT", 8080))  
+    proxy.run(transport="http", host="0.0.0.0", port=os.getenv("PORT", 8080), path="/")  

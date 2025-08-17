@@ -1,0 +1,3 @@
+images:
+  guard: scai-dev.common.repositories.cloud.sap/aspire-ai/guard:latest
+  aspiredashboard: mcr.microsoft.com/dotnet/aspire-dashboard:9.0

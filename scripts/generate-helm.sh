@@ -1,0 +1,1 @@
+aspirate generate --output-format helm --secret-password aiam --private-registry

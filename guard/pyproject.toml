@@ -1,9 +1,12 @@
 [project]
-name = "python-proxy"
+name = "guard"
 version = "0.1.0"
-description = "Add your description here"
+description = "An empty gaurd - as McP proxy for integration placeholder"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastmcp>=2.11.3",
 ]
+
+[project.scripts]
+uv-guard = "guard:main"
