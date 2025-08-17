@@ -1,3 +1,11 @@
 bin/
 obj/
 node_modules/
+.idea/
+.vscode/
+.DS_Store
+*.log
+*.key
+keys/
+env
+*.env
