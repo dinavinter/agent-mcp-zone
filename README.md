@@ -16,5 +16,5 @@ draft
 - conncet with aggreated MCP
 - connect via aggregated MCP to btp CLI MCP & Other MCP (github?)
 - conncet via filted MCP
-  
+
 
