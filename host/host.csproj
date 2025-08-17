@@ -12,6 +12,10 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" Version="9.4.1" />
+    <PackageReference Include="Aspire.Hosting.Python" Version="9.4.1"  />
+    <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.4.1" />
+
+    
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="9.7.0" />
   </ItemGroup>
 
