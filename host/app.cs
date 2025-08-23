@@ -85,7 +85,6 @@ var pythonProxy = builder
 builder.AddDenoTask("chat", "../agents/chat", "start")
     .WithReference(aiCoreProxy)
     .WithReference(pythonProxy)
-    .WaitFor(aiCoreProxy)
     .WaitFor(pythonProxy)
     .WithEnvironment("MCP_SERVER_URL", pythonProxy.GetEndpoint("http"))
     .WithEnvironment("OPENAI_BASE_URL", aiCoreProxy.GetEndpoint("http"))
