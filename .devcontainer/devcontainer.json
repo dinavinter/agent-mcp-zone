@@ -26,7 +26,10 @@
             }
         }
     },
-    "onCreateCommand": "dotnet new install Aspire.ProjectTemplates::*-*",
+    "containerEnv": {
+        "PATH": "/home/vscode/.dotnet/tools:${PATH}"
+    },
+    "onCreateCommand": "dotnet new install Aspire.ProjectTemplates::*-* && dotnet tool update --global Aspire.Cli",
     "postStartCommand": "dotnet dev-certs https --trust",
     "forwardPorts": []
 }

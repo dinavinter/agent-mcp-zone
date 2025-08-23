@@ -295,7 +295,7 @@ var yourLayer = builder.AddPythonApp("your-layer-name", "../your-layer-name", "y
 
 1. **Build and Run**:
    ```bash
-   aspite run 
+   aspire run
    ```
 
 
