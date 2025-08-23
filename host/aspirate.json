@@ -1,6 +1,6 @@
 {
   "WithPrivateRegistry": true,
-  
+  "image-registry": "scai-dev.common.repositories.cloud.sap",
   "TemplatePath": "./templates",
   "ContainerSettings": {
     "Registry": "scai-dev.common.repositories.cloud.sap",

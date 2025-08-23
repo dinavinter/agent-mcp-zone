@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app: ai-core
+  name: ai-core
+spec:
+  minReadySeconds: 60
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-core
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app: ai-core
+    spec:
+      containers:
+      - args: []
+        envFrom:
+        - configMapRef:
+            name: ai-core
+        image: '{{ .Values.images.aicore }}'
+        imagePullPolicy: Always
+        name: ai-core
+        ports:
+        - containerPort: 3002
+          name: http
+        - containerPort: 8000
+          name: tcp
+      imagePullSecrets:
+      - name: image-pull-secret
+      terminationGracePeriodSeconds: 180

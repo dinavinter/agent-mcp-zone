@@ -1,5 +1,5 @@
 # Use Python 3.11 slim image
-FROM --platform=$BUILDPLATFORM python:3.11-slim
+FROM python:3.11-slim
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log

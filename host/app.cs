@@ -4,6 +4,16 @@
 using static Aspire.Hosting.InputType;
 
 var builder = DistributedApplication.CreateBuilder(args);
+var imageRegistry = builder.AddParameter("image-registry","scai-dev.common.repositories.cloud.sap", true)
+    .WithDescription("Container image registry for publishing images")
+    .WithCustomInput(p => new()
+    {
+        InputType = Text,
+        Value = "scai-dev.common.repositories.cloud.sap",
+        Label = p.Name,
+        Placeholder = "Container image registry (e.g. Docker Hub user or Azure Container Registry name)",
+        Description = p.Description
+    }).WithDescription("Container image registry");
 
 
 // AI Core Configuration
@@ -11,6 +21,7 @@ var aiCoreConfig = builder.AddParameter("ai-core-resource-group")
     .WithDescription("Resource group for AI Core")
     .WithCustomInput(p => new()
     {
+        Required = false,
         InputType = Text,
         Value = "default",
         Options =
@@ -19,9 +30,9 @@ var aiCoreConfig = builder.AddParameter("ai-core-resource-group")
         ],
         Label = p.Name,
         Placeholder = "Select AI Core configuration",
-        Description = p.Description
+        Description = p.Description,
+      
     }).WithDescription("AI Core configuration profile");
-
 // AI Core Credentials Secret
 var aiCoreCredentials = builder.AddParameter("ai-core-credentials")
     .WithDescription("SAP AI Core credentials JSON (upload or paste)")
@@ -40,6 +51,12 @@ var aiCoreProxy = builder.AddDenoTask("ai-core", "../models/ai-core", "start")
     .WithHttpEndpoint(port: 3002, env: "PORT")
     .WithEnvironment("AI_CORE_CREDENTIALS_JSON", aiCoreCredentials)
     .WithEnvironment("AI_CORE_RESOURCE_GROUP", aiCoreConfig)
+    .PublishAsDockerFile(d =>
+    {
+        d.WithImageTag("aspire-ai/ai-core:latest");
+        d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
+        d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
+        d.WithDockerfile("../models/ai-core", "Dockerfile");})
     .WithEndpoint();
 
 // AI Core Test Client Service
@@ -78,17 +95,36 @@ var pythonProxy = builder
     .WithEnvironment("MCP_SERVER_URL", targetMcP)
     .WithEnvironment("withPrivateRegistry", "true")
     .WithEnvironment("TARGETPLATFORM", "linux/amd64") 
+    .PublishAsDockerFile(d =>
+    {
+        d.WithImageTag("aspire-ai/guard:latest");
+        d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
+        
+        d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
+        d.WithDockerfile("../guard");
+    })
    // .WithOtlpExporter()
     .WithExternalHttpEndpoints();
 
 // Chat agent with AI Core support
-builder.AddDenoTask("chat", "../agents/chat", "start")
+
+var chat=builder.AddDenoTask("chat", "../agents/chat", "start")
     .WithReference(aiCoreProxy)
     .WithReference(pythonProxy)
     .WaitFor(pythonProxy)
     .WithEnvironment("MCP_SERVER_URL", pythonProxy.GetEndpoint("http"))
     .WithEnvironment("OPENAI_BASE_URL", aiCoreProxy.GetEndpoint("http"))
-    .WithHttpEndpoint(env: "PORT");
+    .WithHttpEndpoint(env: "PORT")
+    .PublishAsDockerFile(d =>
+    {
+        d.WithImageTag("aspire-ai/chat:latest");
+        d.WithImageRegistry("scai-dev.common.repositories.cloud.sap"); 
+        d.WithBuildArg("BASE_IMAGE", "denoland/deno:alpine-1.36.4");
+        d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
+        d.WithBuildArg("platform", "linux/amd64");
+        d.WithDockerfile("../agents/chat");
+    });
+
 
 
 builder
@@ -109,7 +145,15 @@ builder
         annotation.DisplayText = "Server";
         annotation.DisplayOrder = 3;
         annotation.DisplayLocation = UrlDisplayLocation.DetailsOnly;
-    });
+    })
+    // .PublishAsDockerFile(d =>
+    // {
+    //     d.WithImageTag("aspire-ai/inspector:latest");
+    //     d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
+    //     
+    //     d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
+    //     d.WithDockerfile("inspector", "../inspector", "Dockerfile");
+    // })
 
    // .WithOtlpExporter()
     ;

@@ -1,6 +1,18 @@
 {
   "$schema": "https://json.schemastore.org/aspire-8.0.json",
   "resources": {
+    "image-registry": {
+      "type": "parameter.v0",
+      "value": "{image-registry.inputs.value}",
+      "inputs": {
+        "value": {
+          "type": "string",
+          "default": {
+            "value": "scai-dev.common.repositories.cloud.sap"
+          }
+        }
+      }
+    },
     "ai-core-resource-group": {
       "type": "parameter.v0",
       "value": "{ai-core-resource-group.inputs.value}",
@@ -20,31 +32,28 @@
       }
     },
     "ai-core": {
-      "type": "executable.v0",
-      "workingDirectory": "../models/ai-core",
-      "command": "deno",
-      "args": [
-        "task",
-        "start"
-      ],
+      "type": "container.v1",
+      "build": {
+        "context": "../models/ai-core",
+        "dockerfile": "../models/ai-core/Dockerfile"
+      },
       "env": {
         "PORT": "{ai-core.bindings.http.targetPort}",
         "AI_CORE_CREDENTIALS_JSON": "{ai-core-credentials.value}",
-        "AI_CORE_RESOURCE_GROUP": "default"
+        "AI_CORE_RESOURCE_GROUP": "{ai-core-resource-group.value}"
       },
       "bindings": {
         "http": {
           "scheme": "http",
           "protocol": "tcp",
           "transport": "http",
-          "port": 3002,
-          "targetPort": 8000
+          "targetPort": 3002
         },
         "tcp": {
           "scheme": "tcp",
           "protocol": "tcp",
           "transport": "tcp",
-          "targetPort": 8001
+          "targetPort": 8000
         }
       }
     },
@@ -67,7 +76,7 @@
         "PORT": "{guard.bindings.http.targetPort}",
         "MCP_SERVER_URL": "{mcp-server.value}",
         "withPrivateRegistry": "true",
-        "platform": "linux/amd64"
+        "TARGETPLATFORM": "linux/amd64"
       },
       "bindings": {
         "http": {
@@ -80,32 +89,25 @@
       }
     },
     "chat": {
-      "type": "executable.v0",
-      "workingDirectory": "../agents/chat",
-      "command": "deno",
-      "args": [
-        "task",
-        "start"
-      ],
+      "type": "container.v1",
+      "build": {
+        "context": "../agents/chat",
+        "dockerfile": "../agents/chat/Dockerfile"
+      },
       "env": {
-        "PORT": "{chat.bindings.http.targetPort}",
-        "MCP_SERVER_URL": "{guard.bindings.http.url}",
         "services__ai-core__http__0": "{ai-core.bindings.http.url}",
         "services__ai-core__tcp__0": "{ai-core.bindings.tcp.url}",
-        "OPENAI_BASE_URL": "{ai-core.bindings.http.url}"
+        "services__guard__http__0": "{guard.bindings.http.url}",
+        "MCP_SERVER_URL": "{guard.bindings.http.url}",
+        "OPENAI_BASE_URL": "{ai-core.bindings.http.url}",
+        "PORT": "{chat.bindings.http.targetPort}"
       },
       "bindings": {
         "http": {
           "scheme": "http",
           "protocol": "tcp",
           "transport": "http",
-          "targetPort": 8002
-        },
-        "tcp": {
-          "scheme": "tcp",
-          "protocol": "tcp",
-          "transport": "tcp",
-          "targetPort": 8003
+          "targetPort": 8001
         }
       }
     }
