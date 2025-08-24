@@ -15,13 +15,14 @@
 	   "ghcr.io/prom3theu5/aspirational-manifests/aspirate:latest": {},
 	   "ghcr.io/devcontainers/features/kubectl-helm-minikube:1"	: {},
 	   "ghcr.io/devcontainers-community/features/deno:1"	: {},
-	   "ghcr.io/devcontainers-community/npm-features/typescript:1"	: {}
+	   "ghcr.io/devcontainers-community/npm-features/typescript:1"	: {},
+	   "ghcr.io/devcontainers/features/go:1":{}
 	},
 
 	"hostRequirements": {
 		"cpus": 8,
-		"memory": "32gb",
-		"storage": "64gb"
+		"memory": "16gb",
+		"storage": "6gb"
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
