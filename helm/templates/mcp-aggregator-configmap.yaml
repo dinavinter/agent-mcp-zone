@@ -1,11 +1,11 @@
 apiVersion: v1
 data:
   PORT: "7000"
-  MCP_SERVERS_JSON: '{"mcpServers":{"default":{"url":"https://aiam-mcps-everything.cfapps.eu12.hana.ondemand.com/mcp","transport":"http","name":"everything"},"github":{"url":"https://docs.mcp.cloudflare.com/sse/","transport":"sse","name":"cloudflare-docs"}}}'
+  MCP_SERVER_URL: https://aiam-mcps-everything.cfapps.eu12.hana.ondemand.com/mcp
+  OTEL_SERVICE_NAME: mcp-aggregator
   withPrivateRegistry: "true"
   TARGETPLATFORM: linux/amd64
   OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
-  OTEL_SERVICE_NAME: mcp-aggregator
 kind: ConfigMap
 metadata:
   annotations: {}

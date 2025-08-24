@@ -1,14 +1,15 @@
 apiVersion: v1
+data:
+  services__mcp-aggregator__http__0: http://mcp-aggregator:7000
+  PORT: "8090"
+  GUARD_URL: http://mcp-aggregator:7000
+  OTEL_SERVICE_NAME: mcp-policy-guard
+  withPrivateRegistry: "true"
+  TARGETPLATFORM: linux/amd64
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
 kind: ConfigMap
 metadata:
-  name: mcp-policy-guard
+  annotations: {}
   labels:
     app: mcp-policy-guard
-  annotations: {}
-data:
-  PORT: "8090"
-  GUARD_URL: "http://mcp-aggregator:7000"
-  OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
-  OTEL_SERVICE_NAME: "mcp-policy-guard"
-  withPrivateRegistry: "true"
-  TARGETPLATFORM: "linux/amd64"
+  name: mcp-policy-guard

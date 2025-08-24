@@ -3,35 +3,33 @@ kind: Deployment
 metadata:
   annotations: {}
   labels:
-    app: ai-core
-  name: ai-core
+    app: ai-core-proxy
+  name: ai-core-proxy
 spec:
   minReadySeconds: 60
   replicas: 1
   selector:
     matchLabels:
-      app: ai-core
+      app: ai-core-proxy
   strategy:
     type: Recreate
   template:
     metadata:
       annotations: {}
       labels:
-        app: ai-core
+        app: ai-core-proxy
     spec:
       containers:
       - args: []
         envFrom:
         - configMapRef:
-            name: ai-core
-        image: '{{ .Values.images.aicore }}'
+            name: ai-core-proxy
+        image: '{{ .Values.images.aicoreproxy }}'
         imagePullPolicy: Always
-        name: ai-core
+        name: ai-core-proxy
         ports:
         - containerPort: 3002
           name: http
-        - containerPort: 8000
-          name: tcp
       imagePullSecrets:
       - name: image-pull-secret
       terminationGracePeriodSeconds: 180

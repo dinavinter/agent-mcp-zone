@@ -28,7 +28,7 @@ spec:
         imagePullPolicy: Always
         name: chat
         ports:
-        - containerPort: 8001
+        - containerPort: 8000
           name: http
       imagePullSecrets:
       - name: image-pull-secret

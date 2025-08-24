@@ -1,60 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mcp-policy-guard
+  annotations: {}
   labels:
     app: mcp-policy-guard
-  annotations: {}
+  name: mcp-policy-guard
 spec:
-  replicas: 1
   minReadySeconds: 60
-  strategy:
-    type: Recreate
+  replicas: 1
   selector:
     matchLabels:
       app: mcp-policy-guard
+  strategy:
+    type: Recreate
   template:
     metadata:
+      annotations: {}
       labels:
         app: mcp-policy-guard
-      annotations: {}
     spec:
       containers:
-      - name: mcp-policy-guard
-        image: '{{ .Values.images.mcppolicyguard }}'
-        imagePullPolicy: Always
-        args: []
-        ports:
-        - name: http
-          containerPort: 8090
+      - args: []
         envFrom:
         - configMapRef:
             name: mcp-policy-guard
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8090
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          successThreshold: 1
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8090
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
-          successThreshold: 1
-          failureThreshold: 3
-        resources:
-          limits:
-            cpu: 500m
-            memory: 256Mi
-          requests:
-            cpu: 100m
-            memory: 128Mi
+        image: '{{ .Values.images.mcppolicyguard }}'
+        imagePullPolicy: Always
+        name: mcp-policy-guard
+        ports:
+        - containerPort: 8090
+          name: http
       imagePullSecrets:
       - name: image-pull-secret
       terminationGracePeriodSeconds: 180

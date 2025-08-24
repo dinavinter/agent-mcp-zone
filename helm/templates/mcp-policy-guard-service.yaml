@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: mcp-policy-guard
+  annotations: {}
   labels:
     app: mcp-policy-guard
-  annotations: {}
+  name: mcp-policy-guard
 spec:
-  type: ClusterIP
   ports:
   - name: http
     port: 8090
-    targetPort: 8090
+    targetPort: 0
   selector:
     app: mcp-policy-guard
+  type: ClusterIP

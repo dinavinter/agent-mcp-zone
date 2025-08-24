@@ -24,7 +24,7 @@ spec:
         envFrom:
         - configMapRef:
             name: mcp-aggregator
-        image: '{{ .Values.images.mcp-aggregator }}'
+        image: '{{ .Values.images.mcpaggregator }}'
         imagePullPolicy: Always
         name: mcp-aggregator
         ports:

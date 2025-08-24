@@ -1,18 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/aspire-8.0.json",
   "resources": {
-    "image-registry": {
-      "type": "parameter.v0",
-      "value": "{image-registry.inputs.value}",
-      "inputs": {
-        "value": {
-          "type": "string",
-          "default": {
-            "value": "scai-dev.common.repositories.cloud.sap"
-          }
-        }
-      }
-    },
     "ai-core-resource-group": {
       "type": "parameter.v0",
       "value": "{ai-core-resource-group.inputs.value}",
@@ -22,25 +10,23 @@
         }
       }
     },
-    "ai-core-credentials": {
+    "ai-core-key": {
       "type": "parameter.v0",
-      "value": "{ai-core-credentials.inputs.value}",
+      "value": "{ai-core-key.inputs.value}",
       "inputs": {
         "value": {
           "type": "string"
         }
       }
     },
-    "ai-core": {
-      "type": "container.v1",
-      "build": {
-        "context": "../models/ai-core",
-        "dockerfile": "../models/ai-core/Dockerfile"
-      },
+    "ai-core-proxy": {
+      "type": "container.v0",
+      "image": "scai-dev.common.repositories.cloud.sap/aap/sap-ai-proxy:latest",
       "env": {
-        "PORT": "{ai-core.bindings.http.targetPort}",
-        "AI_CORE_CREDENTIALS_JSON": "{ai-core-credentials.value}",
-        "AI_CORE_RESOURCE_GROUP": "{ai-core-resource-group.value}"
+        "PORT": "{ai-core-proxy.bindings.http.targetPort}",
+        "AICORE_CONFIG": "{ai-core-key.value}",
+        "AICORE_RESOURCE_GROUP": "{ai-core-resource-group.value}",
+        "OTEL_SERVICE_NAME": "mcp-ai-core"
       },
       "bindings": {
         "http": {
@@ -48,18 +34,12 @@
           "protocol": "tcp",
           "transport": "http",
           "targetPort": 3002
-        },
-        "tcp": {
-          "scheme": "tcp",
-          "protocol": "tcp",
-          "transport": "tcp",
-          "targetPort": 8000
         }
       }
     },
-    "mcp-servers-config": {
+    "mcp-server": {
       "type": "parameter.v0",
-      "value": "{mcp-servers-config.inputs.value}",
+      "value": "{mcp-server.inputs.value}",
       "inputs": {
         "value": {
           "type": "string"
@@ -74,7 +54,8 @@
       },
       "env": {
         "PORT": "{mcp-aggregator.bindings.http.targetPort}",
-        "MCP_SERVERS_JSON": "{\"mcpServers\":{\"default\":{\"url\":\"https://aiam-mcps-everything.cfapps.eu12.hana.ondemand.com/mcp\",\"transport\":\"http\",\"name\":\"everything\"},\"github\":{\"url\":\"https://docs.mcp.cloudflare.com/sse/\",\"transport\":\"sse\",\"name\":\"cloudflare-docs\"}}}",
+        "MCP_SERVER_URL": "{mcp-server.value}",
+        "OTEL_SERVICE_NAME": "mcp-aggregator",
         "withPrivateRegistry": "true",
         "TARGETPLATFORM": "linux/amd64"
       },
@@ -95,8 +76,10 @@
         "dockerfile": "../mcp-layers/mcp-policy-guard/Dockerfile"
       },
       "env": {
+        "services__mcp-aggregator__http__0": "{mcp-aggregator.bindings.http.url}",
         "PORT": "{mcp-policy-guard.bindings.http.targetPort}",
         "GUARD_URL": "{mcp-aggregator.bindings.http.url}",
+        "OTEL_SERVICE_NAME": "mcp-policy-guard",
         "withPrivateRegistry": "true",
         "TARGETPLATFORM": "linux/amd64"
       },
@@ -117,11 +100,10 @@
         "dockerfile": "../agents/chat/Dockerfile"
       },
       "env": {
-        "services__ai-core__http__0": "{ai-core.bindings.http.url}",
-        "services__ai-core__tcp__0": "{ai-core.bindings.tcp.url}",
         "services__mcp-policy-guard__http__0": "{mcp-policy-guard.bindings.http.url}",
         "MCP_SERVER_URL": "{mcp-policy-guard.bindings.http.url}",
-        "OPENAI_BASE_URL": "{ai-core.bindings.http.url}",
+        "OPENAI_BASE_URL": "{ai-core-proxy.bindings.http.url}",
+        "OTEL_SERVICE_NAME": "mcp-chat",
         "PORT": "{chat.bindings.http.targetPort}"
       },
       "bindings": {
@@ -129,7 +111,7 @@
           "scheme": "http",
           "protocol": "tcp",
           "transport": "http",
-          "targetPort": 8001
+          "targetPort": 8000
         }
       }
     }

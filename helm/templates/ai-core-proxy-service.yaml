@@ -3,16 +3,13 @@ kind: Service
 metadata:
   annotations: {}
   labels:
-    app: ai-core
-  name: ai-core
+    app: ai-core-proxy
+  name: ai-core-proxy
 spec:
   ports:
   - name: http
     port: 3002
     targetPort: 0
-  - name: tcp
-    port: 8000
-    targetPort: 0
   selector:
-    app: ai-core
+    app: ai-core-proxy
   type: ClusterIP
