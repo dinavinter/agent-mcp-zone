@@ -18,3 +18,4 @@ aspirate-state.json
 aspirate-output/
 aspirate-output
 secrets.sh
+__pycache__/
