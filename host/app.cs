@@ -51,12 +51,14 @@ var aiCoreProxy = builder.AddDenoTask("ai-core", "../models/ai-core", "start")
     .WithHttpEndpoint(port: 3002, env: "PORT")
     .WithEnvironment("AI_CORE_CREDENTIALS_JSON", aiCoreCredentials)
     .WithEnvironment("AI_CORE_RESOURCE_GROUP", aiCoreConfig)
+    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-ai-core")
     .PublishAsDockerFile(d =>
     {
         d.WithImageTag("aspire-ai/ai-core:latest");
         d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
         d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
         d.WithDockerfile("../models/ai-core", "Dockerfile");})
+    .WithOtlpExporter()
     .WithEndpoint();
 
 // AI Core Test Client Service
@@ -93,6 +95,7 @@ var pythonProxy = builder
     .WaitFor(targetMcP) 
     .WithHttpEndpoint(port: 7000, env: "PORT", name: "http" )
     .WithEnvironment("MCP_SERVER_URL", targetMcP)
+    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-guard")
     .WithEnvironment("withPrivateRegistry", "true")
     .WithEnvironment("TARGETPLATFORM", "linux/amd64") 
     .PublishAsDockerFile(d =>
@@ -103,7 +106,7 @@ var pythonProxy = builder
         d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
         d.WithDockerfile("../guard");
     })
-   // .WithOtlpExporter()
+    .WithOtlpExporter()
     .WithExternalHttpEndpoints();
 
 // Chat agent with AI Core support
@@ -114,6 +117,7 @@ var chat=builder.AddDenoTask("chat", "../agents/chat", "start")
     .WaitFor(pythonProxy)
     .WithEnvironment("MCP_SERVER_URL", pythonProxy.GetEndpoint("http"))
     .WithEnvironment("OPENAI_BASE_URL", aiCoreProxy.GetEndpoint("http"))
+    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-chat")
     .WithHttpEndpoint(env: "PORT")
     .PublishAsDockerFile(d =>
     {
@@ -133,6 +137,7 @@ builder
     .WaitFor(pythonProxy)
     .WithEnvironment("MCP_SERVER_URL", pythonProxy.GetEndpoint("http"))
     .WithEnvironment("DEFAULT_MCP_SERVER", pythonProxy.Resource.Name)
+    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-inspector")
      
     .WithUrlForEndpoint(McpInspectorResource.ClientEndpointName, annotation =>
     {
@@ -155,7 +160,7 @@ builder
     //     d.WithDockerfile("inspector", "../inspector", "Dockerfile");
     // })
 
-   // .WithOtlpExporter()
+    .WithOtlpExporter()
     ;
 
 builder.Build().Run();
