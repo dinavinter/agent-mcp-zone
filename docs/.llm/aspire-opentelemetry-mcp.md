@@ -1,0 +1,144 @@
+
+
+# Adding OpenTelemetry Tracing to an MCP-Based System
+
+Integrating OpenTelemetry (OTel) into a Model Context Protocol (MCP) environment (such as the **agent-mcp-zone** project) enables end-to-end observability of agent-tool interactions. Below we provide a **Quick Start Guide** for the simplest integration and a **Comprehensive Guide** with detailed steps, resources, and code snippets. This will cover common patterns (using OTel SDKs for tracing MCP sessions and tools) and discuss whether to instrument each node (agent, proxy, tool API) or use a dedicated proxy for telemetry.
+
+## Quick Start Guide (OTel + MCP Integration)
+
+1. **Set Up an OTLP Endpoint for Telemetry:** Begin by running an OpenTelemetry-compatible backend to collect and visualize traces. For local development, you can use the **Aspire Dashboard** (a standalone Docker container with an OTLP receiver)[\[1\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=In%20addition%20to%20being%20a,telemetry%20to%20an%20OTLP%20endpoint) or a simple **Jaeger** instance. For example, the Aspire Dashboard provides an OTLP endpoint and a web UI for logs, metrics, and traces with minimal setup[\[1\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=In%20addition%20to%20being%20a,telemetry%20to%20an%20OTLP%20endpoint). Launch it via Docker and note the OTLP endpoint (e.g. <http://localhost:4317> or 4318).
+2. **Install OpenTelemetry SDK & Instrumentation:** Add the OpenTelemetry libraries to each service in your MCP architecture. This includes your **agent (MCP client)**, any **MCP proxy or gateway**, your **tool servers (MCP servers)**, and any **HTTP APIs (e.g. chat API)**. Use language-specific OTel SDKs (Python, Node, etc.) and instrumentation packages (for HTTP frameworks, database calls, etc.). For instance, ensure HTTP servers/clients use OTel middleware so that incoming requests and outgoing HTTP calls are traced automatically.
+3. **Configure OTLP Exporter:** Configure each service to export telemetry to the OTLP endpoint from step 1. This can often be done via environment variables or minimal config. For example, in a **fast-agent** (Python) configuration, simply enabling OTel and pointing to the local OTLP collector is enough[\[2\]](https://fast-agent.ai/ref/open_telemetry/#:~:text=otel%3A%20enabled%3A%20true%20otlp_endpoint%3A%20,This%20is%20the%20default%20value). In code, you might set OTEL_EXPORTER_OTLP_ENDPOINT=<http://localhost:4317> and OTEL_SERVICE_NAME=&lt;your-service&gt; (or use the SDK’s exporter classes to add an OTLP exporter programmatically).
+4. **Instrument Traces in Agent and Tool Calls:** Initialize an OTel tracer in your code and create spans for key operations:
+5. **HTTP Services:** If your chat API or proxy is an HTTP service, attach OTel instrumentation (e.g. Express or FastAPI middleware). This will trace incoming requests and propagate context on outgoing calls. The OTel HTTP client instrumentation will _automatically inject W3C Trace Context headers_ into outbound requests[\[3\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Context%20Propagation), so if a tool call is HTTP-based, the tool service can pick up the context and continue the trace.
+6. **MCP Sessions & Tool Invocations:** For custom MCP calls (which may not be standard HTTP), manually propagate the trace context. A common pattern is to include the trace’s context (e.g. the traceparent header value) in the MCP request metadata on the client side, and extract it on the server side to link spans. For example, one approach is to attach a traceparent string to the MCP RequestParams.Meta before sending the request, and then on the tool server use that to create a new span with the incoming span as parent[\[4\]](https://github.com/modelcontextprotocol/python-sdk/issues/421#:~:text=1,incoming%20span%20as%20parent%20span). (See the Comprehensive Guide below for a code snippet.)
+7. **Run and Verify Traces:** Start your services with the above instrumentation. Generate a few agent interactions (prompts invoking tools, etc.), and then use your telemetry backend’s UI to verify you can see trace data. In the Aspire Dashboard or Jaeger UI, you should see spans from the **chat API**, the **MCP agent**, and the **tool servers**, all correlated by a common trace ID. For example, a trace might show an **Agent** span (handling a user prompt) calling into a **Tool** span (MCP server handling the request) which in turn may have an **External API** span – forming a clear hierarchy[\[5\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=%5BTraceID%3A%20abc123%5D%20%E2%94%94%E2%94%80%E2%94%80,3rd%20party%20API).
+
+_By following the above steps, you’ll quickly get basic distributed tracing across your MCP-based system._ Next, we provide an in-depth guide with additional context, best practices, and code examples.
+
+## Comprehensive Guide: OpenTelemetry + MCP Integration
+
+In an MCP architecture (agent, proxy, tool servers, etc.), observability is crucial for debugging and performance. OpenTelemetry provides a vendor-neutral way to collect traces, metrics, and logs from each component. Below, we break down the integration process, focusing on instrumenting each node (versus using an external proxy), and illustrate how to propagate trace context through MCP calls.
+
+### 1\. Setting Up an OTLP Collector and Visualizer
+
+Begin by preparing a place for your telemetry data to go:
+
+- **Local Development:** The .NET **Aspire Dashboard** is an easy option. It runs as a container exposing an OTLP endpoint and a web UI to visualize telemetry[\[1\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=In%20addition%20to%20being%20a,telemetry%20to%20an%20OTLP%20endpoint). Notably, the Aspire Dashboard works with _any_ application that can send OTLP data (Java, Python, Go, etc.), and it requires far less setup than assembling Prometheus, Grafana, and Jaeger[\[1\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=In%20addition%20to%20being%20a,telemetry%20to%20an%20OTLP%20endpoint). For example, you can run:
+
+docker run --rm -p 18888:18888 -p 4317:18889 mcr.microsoft.com/dotnet/aspire-dashboard:latest
+
+This exposes an OTLP gRPC endpoint on localhost:4317 (and an HTTP endpoint on 18889 if needed) and a UI at <http://localhost:18888> (you’ll get a one-time login token on startup).
+
+- **Alternative (Jaeger):** You can also use Jaeger as a quick OTLP receiver. For instance, running Jaeger via Docker with ports 4318 (OTLP HTTP) and 16686 (UI) is a common setup[\[6\]](https://fast-agent.ai/ref/open_telemetry/#:~:text=jaeger%3A%20image%3A%20jaegertracing%2Fjaeger%3Alatest%20container_name%3A%20jaeger,OTLP%20HTTP)[\[7\]](https://fast-agent.ai/ref/open_telemetry/#:~:text=ports%3A%20,OTLP%20HTTP). Many OTel SDKs default to <http://localhost:4318/v1/traces> for OTLP over HTTP. Ensure the collector is running and reachable by your services.
+- **Production Considerations:** For production or more robust setups, you might deploy an **OpenTelemetry Collector** as a central service to receive OTLP data and forward it to a backend (like SigNoz, Grafana Tempo, Datadog, etc.). The Collector isn’t exactly a “reverse proxy” for app traffic, but rather a pipeline for telemetry data. It can buffer, batch, and even add attributes (like Kubernetes metadata) before exporting to your chosen monitoring platform. In all cases, the **instrumentation must happen in the services** themselves or via auto-instrumentation agents – the collector simply receives data.
+
+### 2\. Instrumenting Each Service vs. Using a Proxy
+
+**Recommendation:** _Instrument each component (agent, proxy, tool API) with OpenTelemetry._ This yields the most comprehensive tracing. Every service can capture internal operations (e.g., an agent’s decision-making or a tool’s query logic) as spans, not just the network calls.
+
+Using a dedicated “reverse proxy” for telemetry (i.e. an external component intercepting traffic) is generally not necessary and could be limiting:
+
+- A proxy or service mesh (like Envoy with tracing) could capture **incoming and outgoing HTTP requests** and propagate context, but it won’t know about internal function calls, database queries, or other in-process events. You would get coarse-grained traces but miss _why_ a request was slow inside a service.
+- By instrumenting each service with the OTel SDK, you can create spans for _internal logic_ (e.g., the agent’s planning step, a tool’s computation) in addition to the network calls. This fine-grained visibility is important for MCP workflows where much of the “magic” happens inside the agent or tool code.
+- OpenTelemetry’s design is **language-agnostic and standard-based**, so you can instrument polyglot services consistently[\[8\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Multi)[\[9\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=,a%20TypeScript%20tool%20server). For example, a Python agent’s span can seamlessly be the parent of a Node.js tool server’s span if context propagation is done correctly[\[10\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=MCP%20architectures%20are%20rarely%20single,This%20means).
+
+In summary, instrumenting each node is the preferred approach. A proxy might forward trace headers, but you should still initialize OTel in each service to capture spans within that service. The rest of this guide assumes you’ll add OTel to each component.
+
+### 3\. Adding OpenTelemetry to HTTP Services (Chat API, etc.)
+
+For any HTTP-based microservices (like a user-facing chat API or an MCP gateway built on HTTP), leverage OpenTelemetry’s existing instrumentation:
+
+- **Install OTel for your framework:** Most popular web frameworks have OTel instrumentation libraries or middleware. For example, in Node.js you can use the @opentelemetry/instrumentation-express (for Express) or general @opentelemetry/instrumentation-http to capture requests. In Python, packages like opentelemetry-instrumentation-fastapi or Flask, Django instrumentation exist. These will automatically create a new trace/span for each incoming request and extract any traceparent header to continue an existing trace.
+- **Automatic Propagation:** With HTTP instrumentation in place, any **outgoing HTTP calls** from the service will carry the trace context. OTel follows the W3C Trace Context standard, injecting a traceparent header into outbound requests[\[3\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Context%20Propagation). For example, if your chat API calls the MCP agent via HTTP, the agent service will receive the context and know it’s part of the same trace. (Make sure the agent’s OTel is also configured to extract context from incoming requests.)
+- **Exporter Configuration:** Configure the HTTP service to send data to your OTLP collector. This usually involves setting environment vars or initializing an exporter. For instance, set OTEL_SERVICE_NAME="chat-api" (to identify spans from this service) and OTEL_EXPORTER_OTLP_ENDPOINT="<http://localhost:4317>" (matching your collector). Many OTel SDKs will pick these up automatically. In .NET or other environments, you might call an initializer to use the OTLP exporter if an endpoint is set[\[11\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=%2F%2F%20Export%20OpenTelemetry%20data%20via,otel.UseOtlpExporter%28%29%3B). Ensure the service has network access to the collector/endpoint.
+
+After these steps, when you run the chat API and make a request, you should see spans like “HTTP GET /chat” (or similar) in your trace viewer, with the appropriate service name and attributes (HTTP method, route, status code, etc., added by the instrumentation).
+
+### 4\. Instrumenting MCP Sessions and Tool Calls
+
+MCP involves an **agent (client)** invoking **tools (servers)**, often not via simple REST calls. They might use a custom protocol or SDK. Achieving distributed tracing across these calls is critical to follow the agent’s reasoning chain. Here’s how to do it:
+
+**a. Initialize Tracing in Agent and Tool Services:** In each process, initialize an OTel TracerProvider (or equivalent) and a Tracer instance. For simplicity, you can use the global tracer via opentelemetry-api. Make sure to set the same **trace propagation format** on both sides (W3C Trace Context is default in most cases).
+
+**b. Start a Span for Each Tool Invocation (Agent side):** When the agent is about to call a tool via MCP, start a new span representing that tool call. For example, in pseudocode for a Python agent:
+
+from opentelemetry import trace, propagation  
+tracer = trace.get_tracer("mcp-agent")  
+<br/>\# ... inside code where agent calls a tool:  
+with tracer.start_as_current_span("tool_invocation") as span:  
+\# Attach context to MCP request metadata  
+request_meta = {}  
+propagation.get_textmap_propagator().inject(request_meta) # inserts 'traceparent'  
+send_mcp_request(tool_name, params, meta=request_meta)  
+\# span will auto-end when block exits
+
+Here we start a span named after the tool invocation and **inject the current trace context into the request metadata** before sending. This uses OTel’s propagator to create a traceparent entry in the request_meta (or headers, if MCP uses HTTP under the hood).
+
+**c. Continue the Trace in the Tool Server:** On the tool’s side (MCP server), extract the context and start a new span as a child of the agent’s span:
+
+from opentelemetry import trace, propagation  
+tracer = trace.get_tracer("mcp-tool-server")  
+<br/>\# ... when receiving an MCP request:  
+ctx = propagation.get_textmap_propagator().extract(received_meta) # extract 'traceparent'  
+with tracer.start_as_current_span("handle_"+tool_name, context=ctx) as span:  
+result = handle_tool_logic(params)  
+\# You can add attributes or events to span here (e.g., tool name, input size, etc.)  
+return result
+
+By extracting the traceparent from the incoming metadata, we ensure the new span in the tool service is linked to the agent’s span. This achieves **distributed tracing** across the MCP call boundary. The importance of this pattern is highlighted by MCP developers: you bind the trace context to the request metadata on the client, and on the server use it to create a span with the incoming span as the parent[\[4\]](https://github.com/modelcontextprotocol/python-sdk/issues/421#:~:text=1,incoming%20span%20as%20parent%20span). This yields a unified trace timeline even though the agent and tool are separate services.
+
+**d. Use Instrumentation for Underlying Calls:** If the tool server makes external calls (e.g., an HTTP API or database query), you can also use OTel instrumentation there. For instance, if the tool fetches data from an external REST API, enabling HTTP client instrumentation in the tool server will create a sub-span for that HTTP call automatically, attached to the current span. Your trace might then look like: **Agent span → Tool span → External API span**, with context flowing through[\[5\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=%5BTraceID%3A%20abc123%5D%20%E2%94%94%E2%94%80%E2%94%80,3rd%20party%20API).
+
+**e. Metrics and Logs (Optional):** OpenTelemetry also allows capturing metrics and logs in a similar fashion. For example, you could emit a counter for each tool invocation or record the duration as a histogram metric[\[12\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=)[\[13\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Distributed%20Tracing). These are optional but can provide insight into frequency of tool use or performance. Since the question focuses on tracing (OTLP traces), we won’t deep-dive on metrics, but note that the OTel SDK can handle those too (and they can be visualized in tools like Aspire Dashboard as well[\[14\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=In%20addition%20to%20being%20a,telemetry%20to%20an%20OTLP%20endpoint)).
+
+By following the above steps, each MCP call is traced end-to-end. The agent’s perspective and the tool’s internal processing are connected by a common trace context. When viewed in the trace UI, you’ll be able to click on a trace ID and see spans from all services involved in that interaction.
+
+### 5\. Verifying and Refining the Setup
+
+After instrumentation, test your setup:
+
+- Trigger an agent workflow (e.g., a chat conversation that causes multiple tool calls). In your trace UI (Aspire, Jaeger, etc.), locate traces for your service names. You should see a **trace tree** that spans across the agent, proxy (if any), and tool services. The spans should nest appropriately, illustrating the call flow (e.g., _ChatAPI -> Agent -> Tool -> sub-calls_).
+- Check that **trace context propagation** worked. If you see separate traces per service (not connected), then the context isn’t propagating. Ensure the traceparent (or equivalent) is being passed along. When using HTTP, the OTel instrumentation should handle it. For non-HTTP MCP calls, confirm you’re manually injecting/extracting as shown above. The goal is exactly as described: _“when an agent initiates a tool call, OTel injects trace headers into that request, and the tool server picks up that context and continues the trace”_[\[3\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Context%20Propagation).
+- Ensure each service has a distinct **service name** set in the OTel Resource (so you can tell spans apart by service). For example, you might name them “mcp-agent”, “mcp-proxy”, “tool-weatherAPI”, “tool-database”, etc. This can usually be set via OTEL_SERVICE_NAME env var or code.
+- Evaluate if the **span data** is sufficient. You can add attributes to spans (like tool name, input size, output size, user ID, etc.) to enrich the trace. For errors, use OTel’s conventions to mark spans as errored and record exception details. These enhancements make debugging easier when viewing traces.
+
+### 6\. Resources and Further Reading
+
+- _Aspire Dashboard (OpenTelemetry Dev Tool):_ This Microsoft-provided dashboard is a quick way to visualize OTLP data locally[\[1\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=In%20addition%20to%20being%20a,telemetry%20to%20an%20OTLP%20endpoint). It’s great for development and testing, though not meant for production monitoring[\[15\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=Using%20the%20Aspire%20Dashboard%20has,and%20not%20for%20production%20monitoring).
+- _Fast-Agent OpenTelemetry Support:_ If you are using the **fast-agent** framework (or **FastMCP** library) for your agent, consult its docs for built-in OTel support. For example, simply toggling an otel.enabled flag and pointing to an endpoint (default <http://localhost:4318/v1/traces>) sends telemetry from fast-agent to your collector[\[2\]](https://fast-agent.ai/ref/open_telemetry/#:~:text=otel%3A%20enabled%3A%20true%20otlp_endpoint%3A%20,This%20is%20the%20default%20value).
+- _MCP Tracing Proposal:_ The MCP community is actively discussing standardized tracing support. There’s a proposal to send OpenTelemetry trace data via MCP’s notification system so that agents can receive tool traces directly[\[16\]](https://github.com/modelcontextprotocol/modelcontextprotocol/discussions/269#:~:text=This%20proposal%20outlines%20a%20mechanism,clarity%20between%20different%20observability%20signals)[\[17\]](https://github.com/modelcontextprotocol/modelcontextprotocol/discussions/269#:~:text=Metrics%20could%20be%20considered%20in,future%20proposals). While this evolves, the approaches in this guide (service instrumentation and context propagation) are the practical way to achieve tracing _today_.
+- _SigNoz Blog on MCP Observability:_ _“MCP Observability with OpenTelemetry”_ by Elizabeth in SigNoz’s Observability Real Talk newsletter offers an overview of why OTel is a natural fit for MCP systems and what telemetry to collect[\[18\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=In%20this%20blog%2C%20we%27ll%20explore,black%20boxes%20into%20the%20light)[\[19\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Why%20OpenTelemetry%3F). It emphasizes the importance of end-to-end visibility in agent-tool pipelines and validates many of the strategies outlined here.
+
+By implementing OpenTelemetry across your MCP-based architecture, you gain powerful insight into the “black box” of agent-tool interactions. Each node – whether a fast MCP proxy, a chat API, or a tool server – contributes spans to a unified trace, making it easy to pinpoint latency spikes, errors, or bottlenecks in your AI agent’s workflow. Importantly, this solution is based on open standards (OTLP, W3C context)[\[20\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Just%20as%20MCP%20emphasizes%20open%2C,in), so you maintain flexibility to switch or scale observability backends without vendor lock-in. In practice, **instrumenting each service** with OTel is the straightforward and recommended path (as opposed to relying on an external tracing proxy), because it captures the full richness of what occurs inside each component.
+
+With the short and extended guide above, you should be able to add OpenTelemetry tracing (and OTLP export) to the **agent-mcp-zone** project in the simplest way. Happy tracing! 🚀
+
+**Sources:**
+
+- Microsoft .NET Team – _“Use OpenTelemetry with OTLP and the standalone Aspire Dashboard”_[\[1\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=In%20addition%20to%20being%20a,telemetry%20to%20an%20OTLP%20endpoint)[\[15\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=Using%20the%20Aspire%20Dashboard%20has,and%20not%20for%20production%20monitoring) (Aspire Dashboard for easy OTLP visualization)
+- fast-agent Documentation – _“Open Telemetry Support for fast-agent”_[\[2\]](https://fast-agent.ai/ref/open_telemetry/#:~:text=otel%3A%20enabled%3A%20true%20otlp_endpoint%3A%20,This%20is%20the%20default%20value) (enabling OTLP exporter in agent config)
+- MCP Python SDK Issue #421 – _“Adding OpenTelemetry to MCP SDK”_[\[4\]](https://github.com/modelcontextprotocol/python-sdk/issues/421#:~:text=1,incoming%20span%20as%20parent%20span) (pattern for propagating traceparent in MCP requests for distributed tracing)
+- SigNoz Newsletter – _“MCP Observability with OpenTelemetry”_[\[3\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Context%20Propagation) (on automatic trace context propagation across agent-tool boundaries)
+
+[\[1\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=In%20addition%20to%20being%20a,telemetry%20to%20an%20OTLP%20endpoint) [\[11\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=%2F%2F%20Export%20OpenTelemetry%20data%20via,otel.UseOtlpExporter%28%29%3B) [\[14\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=In%20addition%20to%20being%20a,telemetry%20to%20an%20OTLP%20endpoint) [\[15\]](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example#:~:text=Using%20the%20Aspire%20Dashboard%20has,and%20not%20for%20production%20monitoring) Example: Use OpenTelemetry with OTLP and the standalone Aspire Dashboard - .NET | Microsoft Learn
+
+<https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-otlp-example>
+
+[\[2\]](https://fast-agent.ai/ref/open_telemetry/#:~:text=otel%3A%20enabled%3A%20true%20otlp_endpoint%3A%20,This%20is%20the%20default%20value) [\[6\]](https://fast-agent.ai/ref/open_telemetry/#:~:text=jaeger%3A%20image%3A%20jaegertracing%2Fjaeger%3Alatest%20container_name%3A%20jaeger,OTLP%20HTTP) [\[7\]](https://fast-agent.ai/ref/open_telemetry/#:~:text=ports%3A%20,OTLP%20HTTP) Open Telemetry Support for fast-agent - fast-agent documentation
+
+<https://fast-agent.ai/ref/open_telemetry/>
+
+[\[3\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Context%20Propagation) [\[5\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=%5BTraceID%3A%20abc123%5D%20%E2%94%94%E2%94%80%E2%94%80,3rd%20party%20API) [\[8\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Multi) [\[9\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=,a%20TypeScript%20tool%20server) [\[10\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=MCP%20architectures%20are%20rarely%20single,This%20means) [\[12\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=) [\[13\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Distributed%20Tracing) [\[18\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=In%20this%20blog%2C%20we%27ll%20explore,black%20boxes%20into%20the%20light) [\[19\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Why%20OpenTelemetry%3F) [\[20\]](https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry#:~:text=Just%20as%20MCP%20emphasizes%20open%2C,in) MCP Observability with OpenTelemetry - by Elizabeth
+
+<https://newsletter.signoz.io/p/mcp-observability-with-opentelemetry>
+
+[\[4\]](https://github.com/modelcontextprotocol/python-sdk/issues/421#:~:text=1,incoming%20span%20as%20parent%20span) Adding Opentelemetry to MCP SDK · Issue #421 · modelcontextprotocol/python-sdk · GitHub
+
+<https://github.com/modelcontextprotocol/python-sdk/issues/421>
+
+[\[16\]](https://github.com/modelcontextprotocol/modelcontextprotocol/discussions/269#:~:text=This%20proposal%20outlines%20a%20mechanism,clarity%20between%20different%20observability%20signals) [\[17\]](https://github.com/modelcontextprotocol/modelcontextprotocol/discussions/269#:~:text=Metrics%20could%20be%20considered%20in,future%20proposals) \[Proposal\] Adding OpenTelemetry Trace Support to MCP · modelcontextprotocol modelcontextprotocol · Discussion #269 · GitHub
+
+<https://github.com/modelcontextprotocol/modelcontextprotocol/discussions/269>
+
+

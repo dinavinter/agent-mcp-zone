@@ -1,0 +1,16 @@
+apiVersion: gateway.kyma-project.io/v1beta1
+kind: APIRule
+metadata:
+  name: dashboard-apirule
+spec:
+  gateway: kyma-gateway.kyma-system.svc.cluster.local
+  host: dashboard-{{ .Release.Namespace }}
+  service:
+    name: aspire-dashboard
+    port: 18888
+  rules:
+    - path: /.*
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+      accessStrategies:
+        - handler: allow
+      mutators: []

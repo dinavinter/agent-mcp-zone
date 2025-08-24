@@ -1,0 +1,16 @@
+apiVersion: gateway.kyma-project.io/v1beta1
+kind: APIRule
+metadata:
+  name: chat-apirule
+spec:
+  gateway: kyma-gateway.kyma-system.svc.cluster.local
+  host: chat-{{ .Release.Namespace }}
+  service:
+    name: chat
+    port: 8000
+  rules:
+    - path: /.*
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+      accessStrategies:
+        - handler: allow
+      mutators: []
