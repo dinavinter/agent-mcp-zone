@@ -2,6 +2,7 @@
   "version": "4",
   "specifiers": {
     "npm:@ai-sdk/azure@*": "2.0.15_zod@3.25.76",
+    "npm:@ai-sdk/openai@*": "2.0.15_zod@3.25.76",
     "npm:@modelcontextprotocol/sdk@*": "1.17.3_express@5.1.0_zod@3.25.76",
     "npm:@types/node@*": "22.5.4",
     "npm:ai@*": "5.0.15_zod@3.25.76",

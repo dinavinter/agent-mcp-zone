@@ -34,33 +34,24 @@ var aiCoreConfig = builder.AddParameter("ai-core-resource-group")
         Description = p.Description,
       
     }).WithDescription("AI Core configuration profile");
+
 // AI Core Credentials Secret
-var aiCoreCredentials = builder.AddParameter("ai-core-credentials")
+var aiCoreCredentials = builder.AddParameter("ai-core-key")
     .WithDescription("SAP AI Core credentials JSON (upload or paste)")
     .WithCustomInput(p => new()
     {
         InputType = Text,
-        Value = "",
         Label = p.Name,
         Placeholder = "Paste AI Core credentials JSON or upload key file",
         Description = p.Description
     }).WithDescription("AI Core credentials in JSON format");
 
-
-// AI Core Proxy Service
-var aiCoreProxy = builder.AddDenoTask("ai-core", "../models/ai-core", "start")
-    .WithHttpEndpoint(port: 3002, env: "PORT")
-    .WithEnvironment("AI_CORE_CREDENTIALS_JSON", aiCoreCredentials)
-    .WithEnvironment("AI_CORE_RESOURCE_GROUP", aiCoreConfig)
+var aiCoreProxy = builder.AddContainer("ai-core-proxy", "scai-dev.common.repositories.cloud.sap/aap/sap-ai-proxy:latest")
+    .WithHttpEndpoint(env: "PORT" , port: 3002, targetPort: 3002)
+    .WithEnvironment("AICORE_CONFIG", aiCoreCredentials)
+    .WithEnvironment("AICORE_RESOURCE_GROUP", aiCoreConfig)
     .WithEnvironment("OTEL_SERVICE_NAME", "mcp-ai-core")
-    .PublishAsDockerFile(d =>
-    {
-        d.WithImageTag("aspire-ai/ai-core:latest");
-        d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
-        d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
-        d.WithDockerfile("../models/ai-core", "Dockerfile");})
-    .WithOtlpExporter()
-    .WithEndpoint();
+    .WithOtlpExporter();
 
 // AI Core Test Client Service
 // var aiCoreTestClient = builder.AddDenoTask("ai-core-client", "../models/ai-core", "client")
@@ -87,6 +78,8 @@ var targetMcP = builder.AddParameter("mcp-server")
     }).WithDescription("Target McP server URL")
     .WithUrl("https://aiam-mcps-everything.cfapps.eu12.hana.ondemand.com/mcp");
 
+
+//MCP Layers
 
 
 var mcpAggregator = builder
@@ -136,7 +129,7 @@ var mcpPolicyGuard = builder
 // Chat agent with AI Core support
 
 var chat=builder.AddDenoTask("chat", "../agents/chat", "start")
-    .WithReference(aiCoreProxy)
+    .WaitFor(aiCoreProxy)
     .WithReference(mcpPolicyGuard)
     .WaitFor(mcpPolicyGuard)
     .WithEnvironment("MCP_SERVER_URL", mcpPolicyGuard.GetEndpoint("http"))
@@ -153,6 +146,8 @@ var chat=builder.AddDenoTask("chat", "../agents/chat", "start")
         d.WithDockerfile("../agents/chat");
     });
 
+
+//MCP Inspector - With default server to policy guard
 
 
 builder

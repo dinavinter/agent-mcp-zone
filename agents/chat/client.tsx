@@ -7,7 +7,7 @@ import {
   streamText,
     readUIMessageStream
 } from "npm:ai";
-import { azure } from "npm:@ai-sdk/azure";
+import {createAzure } from "npm:@ai-sdk/azure";
 import { Hono } from "npm:hono";
 import { streamSSE, streamText as stream } from "npm:hono/streaming";
 import { cors } from "npm:hono/cors";
@@ -247,13 +247,13 @@ app.use("/chats/:chatId/prompt", async (c, next) => {
 });
 
 app.post("/chats/:chatId/prompt", async (c) => {
+      const chat = chats.getArray<Message>(c.req.param("chatId")); 
       const status =chats.getMap<string>(c.req.param("chatId") + "-status");
       chats.transact(() => {
           status.set("status", "processing");
           status.set("updatedAt", new Date().toISOString());
           status.set("message", "⏳ Processing...");
       });
-      const chat = chats.getArray<Message>(c.req.param("chatId"));
       const body = await c.req.parseBody();
       const message = body.prompt as string;
       const url = body.url as string;
@@ -262,6 +262,12 @@ app.post("/chats/:chatId/prompt", async (c) => {
       });
      status.set("message", `🤖 Connected to MCP at ${url}`);
 
+     const {OPENAI_BASE_URL, OPENAI_API_KEY} = env<{ OPENAI_BASE_URL: string, OPENAI_API_KEY: string }>(c)
+     const openai=createAzure({
+      baseURL: OPENAI_BASE_URL,
+      apiKey: OPENAI_API_KEY || "dummy-api-key",
+      apiVersion: "2024-06-01-preview",
+     })
      const mcpTools = await mcpClient.tools();
        
      status.set("message", `🛠️ Loaded ${Object.keys(mcpTools).length} tools from MCP at ${url}`);
@@ -276,7 +282,7 @@ app.post("/chats/:chatId/prompt", async (c) => {
       const messageId = chat.length;
 
       const result = streamText({
-          model: azure("gpt-4o"),
+          model: openai("gpt-4.1"),
           system:
               "You are a helpful assistant that helps users using the tools provided.",
           messages: chat.toArray(),
