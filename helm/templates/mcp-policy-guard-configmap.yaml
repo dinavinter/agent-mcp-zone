@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-policy-guard
+  labels:
+    app: mcp-policy-guard
+  annotations: {}
+data:
+  PORT: "8090"
+  GUARD_URL: "http://guard:7000"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
+  OTEL_SERVICE_NAME: "mcp-policy-guard"
+  withPrivateRegistry: "true"
+  TARGETPLATFORM: "linux/amd64"

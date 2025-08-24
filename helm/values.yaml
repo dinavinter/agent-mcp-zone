@@ -1,5 +1,7 @@
 images:
   aicore: scai-dev.common.repositories.cloud.sap/aspire-ai/ai-core:latest
-  guard: scai-dev.common.repositories.cloud.sap/aspire-ai/guard:latest
   chat: scai-dev.common.repositories.cloud.sap/aspire-ai/chat:latest
   aspiredashboard: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
+  guard: scai-dev.common.repositories.cloud.sap/aspire-ai/guard:latest
+  mcppolicyguard: scai-dev.common.repositories.cloud.sap/aspire-ai/mcp-policy-guard:latest
+  

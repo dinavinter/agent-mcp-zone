@@ -3,6 +3,7 @@
 #pragma warning disable ASPIREPUBLISHERS001
 using static Aspire.Hosting.InputType;
 
+//todo: session redis
 var builder = DistributedApplication.CreateBuilder(args);
 var imageRegistry = builder.AddParameter("image-registry","scai-dev.common.repositories.cloud.sap", true)
     .WithDescription("Container image registry for publishing images")
@@ -17,7 +18,7 @@ var imageRegistry = builder.AddParameter("image-registry","scai-dev.common.repos
 
 
 // AI Core Configuration
-var aiCoreConfig = builder.AddParameter("ai-core-resource-group")
+var aiCoreConfig = builder.AddParameter("ai-core-resource-group-1")
     .WithDescription("Resource group for AI Core")
     .WithCustomInput(p => new()
     {
@@ -109,13 +110,34 @@ var pythonProxy = builder
     .WithOtlpExporter()
     .WithExternalHttpEndpoints();
 
+
+// MCP Policy Guard - Go-based proxy with OpenTelemetry tracing
+var mcpPolicyGuard = builder
+    .AddGolangApp("mcp-policy-guard", "../mcp-policy-guard")
+    .WithReference(pythonProxy)
+    .WaitFor(pythonProxy)
+    .WithHttpEndpoint(port: 8090, env: "PORT", name: "http")
+    .WithEnvironment("GUARD_URL", pythonProxy.GetEndpoint("http"))
+    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-policy-guard")
+    .WithEnvironment("withPrivateRegistry", "true")
+    .WithEnvironment("TARGETPLATFORM", "linux/amd64")
+    .PublishAsDockerFile(d =>
+    {
+        d.WithImageTag("aspire-ai/mcp-policy-guard:latest");
+        d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
+        d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
+        d.WithDockerfile("../mcp-policy-guard");
+    })
+    .WithOtlpExporter()
+    .WithExternalHttpEndpoints();
+
 // Chat agent with AI Core support
 
 var chat=builder.AddDenoTask("chat", "../agents/chat", "start")
     .WithReference(aiCoreProxy)
-    .WithReference(pythonProxy)
-    .WaitFor(pythonProxy)
-    .WithEnvironment("MCP_SERVER_URL", pythonProxy.GetEndpoint("http"))
+    .WithReference(mcpPolicyGuard)
+    .WaitFor(mcpPolicyGuard)
+    .WithEnvironment("MCP_SERVER_URL", mcpPolicyGuard.GetEndpoint("http"))
     .WithEnvironment("OPENAI_BASE_URL", aiCoreProxy.GetEndpoint("http"))
     .WithEnvironment("OTEL_SERVICE_NAME", "mcp-chat")
     .WithHttpEndpoint(env: "PORT")
@@ -133,10 +155,10 @@ var chat=builder.AddDenoTask("chat", "../agents/chat", "start")
 
 builder
     .AddMcpInspector("inspector")
-    .WithMcpServer(pythonProxy, isDefault: true)
-    .WaitFor(pythonProxy)
-    .WithEnvironment("MCP_SERVER_URL", pythonProxy.GetEndpoint("http"))
-    .WithEnvironment("DEFAULT_MCP_SERVER", pythonProxy.Resource.Name)
+    .WithMcpServer(mcpPolicyGuard, isDefault: true)
+    .WaitFor(mcpPolicyGuard)
+    .WithEnvironment("MCP_SERVER_URL", mcpPolicyGuard.GetEndpoint("http"))
+    .WithEnvironment("DEFAULT_MCP_SERVER", mcpPolicyGuard.Resource.Name)
     .WithEnvironment("OTEL_SERVICE_NAME", "mcp-inspector")
      
     .WithUrlForEndpoint(McpInspectorResource.ClientEndpointName, annotation =>

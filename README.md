@@ -1,15 +1,37 @@
 # Agent Application Programming (AAP)
 
-Template repository with the user -> agent -> guard -> mcp-server chain, meant to ease deployments and integration of agents and guards
+Template repository with the user -> agent -> mcp-proxy -> guard -> mcp-server chain, meant to ease deployments and integration of agents and guards with observability.
 
+## Architecture Overview
 
+The system now includes a **Go-based MCP Proxy** that adds OpenTelemetry tracing for comprehensive observability:
+
+```
+Client → MCP Proxy (Go + OpenTelemetry) → Guard Service (Python) → Downstream MCP Server
+```
 
 ## Current Implementation
 ![graph.png](docs/graph.png)
 
+###  Go MCP Proxy with OpenTelemetry
+
+The **MCP Proxy** (`/mcp-proxy/`) is a Go-based service that:
+- **Forwards MCP requests** to the guard service without modification
+- **Adds OpenTelemetry tracing** to all requests for observability
+- **Provides health checks** for Kubernetes deployments  
+- **Injects trace context** into downstream requests for distributed tracing
+- **Handles errors gracefully** with proper logging and span recording
+
+Key features:
+- Zero-modification proxy (preserves MCP protocol)
+- Comprehensive tracing with span attributes
+- Health (`/health`) and readiness (`/ready`) endpoints
+- Kubernetes-ready with liveness/readiness probes
+- Configurable via environment variables
 
 
-### MCP Guard
+
+### Python McP Proxy
 The current implementation provides a **placeholder** proxy to  demonstrates integration between different layers
 
 ![guard.png](docs/guard.png)

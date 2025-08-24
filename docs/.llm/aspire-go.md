@@ -1,0 +1,61 @@
+.NET Aspire Go hosting
+11/20/2024
+Includes: Hosting integration included Hosting integration only — Client integration not included Client integration not included
+
+ Note
+
+This integration is part of the .NET Aspire Community Toolkit and isn't officially supported by the .NET Aspire team.
+
+In this article, you learn how to use the .NET Aspire Go hosting integration to host Go applications.
+
+Hosting integration
+To get started with the .NET Aspire Go hosting integration, install the 📦 CommunityToolkit.Aspire.Hosting.Go NuGet package in the AppHost project.
+
+.NET CLI
+PackageReference
+.NET CLI
+
+Copy
+dotnet add package CommunityToolkit.Aspire.Hosting.Golang
+For more information, see dotnet add package or Manage package dependencies in .NET applications.
+
+Example usage
+In the Program.cs file of your AppHost project, call the AddGolangApp method to add a Go application to the builder.
+
+C#
+
+Copy
+var golang = builder.AddGolangApp("golang", "../gin-api")
+    .WithHttpEndpoint(env: "PORT");
+The PORT environment variable is used to determine the port the Go application should listen on. By default, this port is randomly assigned by .NET Aspire. The name of the environment variable can be changed by passing a different value to the WithHttpEndpoint method.
+
+The Go application can be added as a reference to other resources in the AppHost project.
+
+See also
+.NET Aspire Community Toolkit GitHub repo
+Sample Go app
+ Collaborate with us on GitHub
+The source for this content can be found on GitHub, where you can also create and review issues and pull requests. For more information, see our contributor guide.
+
+.NET Aspire feedback
+
+.NET Aspire is an open source project. Select a link to provide feedback:
+
+ Open a documentation issue
+ Provide product feedback
+Additional resources
+Documentation
+
+Overview - .NET Aspire
+
+An overview of the .NET Aspire Community Toolkit project.
+
+.NET Aspire Community Toolkit EventStore integration - .NET Aspire
+
+Learn how to use the .NET Aspire EventStore hosting and client integration to run the EventStore container and accessing it via the EventStore client.
+
+Community Toolkit Python hosting extensions - .NET Aspire
+
+Learn about the .NET Aspire Community Toolkit Python hosting extensions package which provides extra functionality to the .NET Aspire Python hosting package.
+
+Show 5 more

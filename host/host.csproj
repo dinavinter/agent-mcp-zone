@@ -7,7 +7,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <UserSecretsId>8acfe3e4-53a7-4835-ad59-c4f686d33d58</UserSecretsId>
+    <UserSecretsId>8acfe3e4-53a7-4835-ad59-c4f686d33d589</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,6 +15,7 @@
     <PackageReference Include="Aspire.Hosting.Python" Version="9.4.1" />
     <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.4.1" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.Deno" Version="9.7.0" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Golang" Version="9.7.0" />
 
     
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.McpInspector" Version="9.7.0" />
