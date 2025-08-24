@@ -192,3 +192,13 @@ python -u main.py
 ## License
 
 This project is part of the agent application programming framework.
+
+## Directory Structure
+
+The MCP Aggregator is now located in the `mcp-layers` directory alongside the MCP Policy Guard service:
+
+```
+mcp-layers/
+├── mcp-aggregator/     # Python-based MCP aggregator
+└── mcp-policy-guard/   # Go-based MCP policy guard
+```

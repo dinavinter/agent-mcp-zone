@@ -1,5 +1,15 @@
 # MCP Policy Guard
 
+## Directory Structure
+
+The MCP Policy Guard is now located in the `mcp-layers` directory alongside the MCP Aggregator service:
+
+```
+mcp-layers/
+├── mcp-aggregator/     # Python-based MCP aggregator
+└── mcp-policy-guard/   # Go-based MCP policy guard
+```
+
 A Go-based Model Context Protocol (MCP) policy guard that forwards requests to a downstream MCP server (aggregator service) while adding OpenTelemetry tracing for observability.
 
 ## Features

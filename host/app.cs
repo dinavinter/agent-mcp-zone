@@ -92,7 +92,7 @@ var targetMcP = builder.AddParameter("mcp-server")
 var mcpAggregator = builder
     .AddUvApp(       
         name: "mcp-aggregator",
-        projectDirectory: "../mcp-aggregator",
+        projectDirectory: "../mcp-layers/mcp-aggregator",
         scriptPath: "main.py"
         
     )
@@ -107,7 +107,7 @@ var mcpAggregator = builder
         d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
         
         d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
-        d.WithDockerfile("../mcp-aggregator");
+        d.WithDockerfile("../mcp-layers/mcp-aggregator");
     })
     .WithOtlpExporter()
     .WithExternalHttpEndpoints();
@@ -115,7 +115,7 @@ var mcpAggregator = builder
 
 // MCP Policy Guard - Go-based proxy with OpenTelemetry tracing
 var mcpPolicyGuard = builder
-    .AddGolangApp("mcp-policy-guard", "../mcp-policy-guard")
+    .AddGolangApp("mcp-policy-guard", "../mcp-layers/mcp-policy-guard")
     .WithReference(mcpAggregator)
     .WaitFor(mcpAggregator)
     .WithHttpEndpoint(port: 8090, env: "PORT", name: "http")
@@ -128,7 +128,7 @@ var mcpPolicyGuard = builder
         d.WithImageTag("aspire-ai/mcp-policy-guard:latest");
         d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
         d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
-        d.WithDockerfile("../mcp-policy-guard");
+        d.WithDockerfile("../mcp-layers/mcp-policy-guard");
     })
     .WithOtlpExporter()
     .WithExternalHttpEndpoints();

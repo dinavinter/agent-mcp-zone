@@ -51,9 +51,9 @@ Will be replaced with an actual aggregator implementation - via docker image or 
 
 ![mcp-aggregator.png](docs/guard.png)
 
-[./guerd/main.py](./guerd/main.py) is a simple proxy that uses the `fastmcp` library to create a proxy server for the Model Context Protocol (MCP). It allows you to connect to an MCP server and provides a basic interface for interacting with it.
+[./mcp-layers/mcp-aggregator/main.py](./mcp-layers/mcp-aggregator/main.py) is a simple proxy that uses the `fastmcp` library to create a proxy server for the Model Context Protocol (MCP). It allows you to connect to an MCP server and provides a basic interface for interacting with it.
 ```python
-# mcp-aggregator/main.py
+# mcp-layers/mcp-aggregator/main.py
 
 ...
 config = getConfig()

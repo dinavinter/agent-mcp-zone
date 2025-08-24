@@ -30,14 +30,14 @@ echo "🔧 Generating Aspire Helm charts..."
 
 # fix platform for mcp-aggregator service
 echo "📦 Building MCP Aggregator Service..."
-docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/mcp-aggregator:$VERSION" --push ./mcp-aggregator
+docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/mcp-aggregator:$VERSION" --push ./mcp-layers/mcp-aggregator
 
 docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/chat:$VERSION" --push ./agents/chat
 
 docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/ai-core:$VERSION" --push ./models/ai-core
 
 echo "📦 Building MCP Policy Guard Service..."
-docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/mcp-policy-guard:$VERSION" --push ./mcp-policy-guard
+docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/mcp-policy-guard:$VERSION" --push ./mcp-layers/mcp-policy-guard
 
 
 docker manifest inspect "$REGISTRY_URL/aspire-ai/mcp-aggregator:$VERSION" || echo "Manifest not found, skipping inspection"

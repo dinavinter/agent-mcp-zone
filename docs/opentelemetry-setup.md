@@ -6,7 +6,7 @@ This document describes the OpenTelemetry (OTel) implementation across the diffe
 
 OpenTelemetry has been integrated into all major services to provide comprehensive distributed tracing:
 
-- **MCP Aggregator Service** (Python/FastMCP): Multi-server MCP proxy with tracing
+- **MCP Aggregator Service** (Python/FastMCP): Multi-server MCP proxy with tracing (`mcp-layers/mcp-aggregator/`)
 - **Chat Service** (TypeScript/Deno): Web interface with MCP client tracing
 - **AI Core Service** (TypeScript/Deno): AI model proxy with tracing
 - **Inspector Service**: MCP inspector with tracing
@@ -28,9 +28,9 @@ OpenTelemetry has been integrated into all major services to provide comprehensi
 
 ## Services and Tracing
 
-### 1. MCP Aggregator Service (Python)
+### 1. MCP Aggregator Service (Python) - `mcp-layers/mcp-aggregator/`
 
-**Location**: `mcp-aggregator/main.py`
+**Location**: `mcp-layers/mcp-aggregator/main.py`
 
 **Features**:
 - Multi-server MCP request/response tracing
@@ -137,7 +137,7 @@ A typical trace flow for a chat interaction:
    - `mcp_client_creation` - Creates MCP client
    - `mcp_tools_loading` - Loads available tools
 
-2. **MCP Policy Guard** (`mcp-policy-guard`)
+2. **MCP Policy Guard** (`mcp-layers/mcp-policy-guard`)
    - `mcp-proxy-request` - Receives and validates requests
    - Forwards to MCP Aggregator
 

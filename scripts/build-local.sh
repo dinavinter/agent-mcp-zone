@@ -21,7 +21,7 @@ cd ../..
 
 # Build MCP Aggregator Service
 echo "📦 Building MCP Aggregator Service..."
-cd mcp-aggregator
+cd mcp-layers/mcp-aggregator
 docker build -t $REGISTRY_URL/mcp-aggregator:$VERSION .
 cd ..
 
