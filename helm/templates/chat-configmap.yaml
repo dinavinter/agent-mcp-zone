@@ -2,8 +2,8 @@ apiVersion: v1
 data:
   services__ai-core__http__0: http://ai-core:3002
   services__ai-core__tcp__0: ai-core:8000
-  services__guard__http__0: http://guard:7000
-  MCP_SERVER_URL: http://guard:7000
+  services__mcp-aggregator__http__0: http://mcp-aggregator:7000
+  MCP_SERVER_URL: http://mcp-aggregator:7000
   OPENAI_BASE_URL: http://ai-core:3002
   PORT: "8001"
   OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889

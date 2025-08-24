@@ -28,9 +28,9 @@ echo "🔧 Generating Aspire Helm charts..."
 #aspirate build --non-interactive --container-registry "$REGISTRY_URL"   --container-build-arg "platform"="linux/amd64" --container-build-arg "version=$VERSION" 
 
 
-# fix platform for guard service
-echo "📦 Building Guard Service..."
-docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/guard:$VERSION" --push ./guard
+# fix platform for mcp-aggregator service
+echo "📦 Building MCP Aggregator Service..."
+docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/mcp-aggregator:$VERSION" --push ./mcp-aggregator
 
 docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/chat:$VERSION" --push ./agents/chat
 
@@ -40,7 +40,7 @@ echo "📦 Building MCP Policy Guard Service..."
 docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/mcp-policy-guard:$VERSION" --push ./mcp-policy-guard
 
 
-docker manifest inspect "$REGISTRY_URL/aspire-ai/guard:$VERSION" || echo "Manifest not found, skipping inspection"
+docker manifest inspect "$REGISTRY_URL/aspire-ai/mcp-aggregator:$VERSION" || echo "Manifest not found, skipping inspection"
  
 docker manifest inspect "$REGISTRY_URL/aspire-ai/chat:$VERSION" || echo "Manifest not found, skipping inspection"
 

@@ -6,7 +6,7 @@ This document describes the OpenTelemetry (OTel) implementation across the diffe
 
 OpenTelemetry has been integrated into all major services to provide comprehensive distributed tracing:
 
-- **Guard Service** (Python/FastMCP): MCP proxy with tracing
+- **MCP Aggregator Service** (Python/FastMCP): Multi-server MCP proxy with tracing
 - **Chat Service** (TypeScript/Deno): Web interface with MCP client tracing
 - **AI Core Service** (TypeScript/Deno): AI model proxy with tracing
 - **Inspector Service**: MCP inspector with tracing
@@ -15,36 +15,38 @@ OpenTelemetry has been integrated into all major services to provide comprehensi
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Chat Client   │───▶│   Guard Proxy   │───▶│  MCP Servers    │
-│   (mcp-chat)    │    │   (mcp-guard)   │    │   (External)    │
+│   Chat Client   │───▶│ MCP Policy Guard│───▶│ MCP Aggregator  │
+│   (mcp-chat)    │    │ (mcp-policy-    │    │ (mcp-aggregator)│
+└─────────────────┘    │   guard)        │    └─────────┬───────┘
+         │             └─────────────────┘              │
+         ▼                                              ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   AI Core       │    │   Inspector     │    │  Multiple MCP   │
+│   (mcp-ai-core) │    │ (mcp-inspector) │    │   Servers       │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │
-         ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐
-│   AI Core       │    │   Inspector     │
-│   (mcp-ai-core) │    │   (mcp-inspector)│
-└─────────────────┘    └─────────────────┘
 ```
 
 ## Services and Tracing
 
-### 1. Guard Service (Python)
+### 1. MCP Aggregator Service (Python)
 
-**Location**: `guard/main.py`
+**Location**: `mcp-aggregator/main.py`
 
 **Features**:
-- MCP request/response tracing
+- Multi-server MCP request/response tracing
 - Trace context propagation in MCP metadata
 - Automatic span creation for each MCP operation
+- Aggregation of multiple MCP servers
 
 **Key Spans**:
 - `mcp_request`: Tracks incoming MCP requests
 - `mcp_client_creation`: MCP client initialization
 - `mcp_tools_loading`: Tool discovery operations
+- `mcp_server_aggregation`: Multi-server aggregation operations
 
 **Configuration**:
 ```python
-OTEL_SERVICE_NAME=mcp-guard
+OTEL_SERVICE_NAME=mcp-aggregator
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 ```
 
@@ -93,7 +95,7 @@ OTEL_SERVICE_NAME=mcp-ai-core
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 ```
 
-### 4. Inspector Service
+### 5. Inspector Service
 
 **Features**:
 - MCP inspection operation tracing
@@ -112,7 +114,7 @@ Add these variables to your `.env` file:
 ```bash
 # OpenTelemetry Configuration
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
-OTEL_SERVICE_NAME=mcp-guard
+OTEL_SERVICE_NAME=mcp-aggregator
 OTEL_SERVICE_NAME_CHAT=mcp-chat
 OTEL_SERVICE_NAME_AI_CORE=mcp-ai-core
 ```
@@ -135,11 +137,15 @@ A typical trace flow for a chat interaction:
    - `mcp_client_creation` - Creates MCP client
    - `mcp_tools_loading` - Loads available tools
 
-2. **Guard Service** (`mcp-guard`)
-   - `mcp_request` - Receives MCP request from chat
-   - Forwards to external MCP servers
+2. **MCP Policy Guard** (`mcp-policy-guard`)
+   - `mcp-proxy-request` - Receives and validates requests
+   - Forwards to MCP Aggregator
 
-3. **AI Core Service** (`mcp-ai-core`)
+3. **MCP Aggregator** (`mcp-aggregator`)
+   - `mcp_request` - Receives MCP request from policy guard
+   - Aggregates and forwards to multiple external MCP servers
+
+4. **AI Core Service** (`mcp-ai-core`)
    - `ai_core_authentication` - Gets authentication token
    - `ai_core_chat_completion` - Processes AI model request
    - `ai_core_deployments_fetch` - Discovers available models
@@ -244,7 +250,7 @@ Each service includes health check endpoints that can be used to verify OpenTele
 
 - Chat: `GET /health`
 - AI Core: `GET /health`
-- Guard: Built into FastMCP
+- MCP Aggregator: Built into FastMCP
 
 ## Future Enhancements
 

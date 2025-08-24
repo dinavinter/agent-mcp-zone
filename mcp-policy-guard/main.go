@@ -33,9 +33,12 @@ func main() {
 	defer shutdown()
 
 	// Get configuration from environment variables
-	guardURL := os.Getenv("GUARD_URL")
-	if guardURL == "" {
-		guardURL = "http://guard:7000" // Default to Kubernetes service name
+	aggregatorURL := os.Getenv("GUARD_URL") // Keep for backward compatibility
+	if aggregatorURL == "" {
+		aggregatorURL = os.Getenv("AGGREGATOR_URL")
+	}
+	if aggregatorURL == "" {
+		aggregatorURL = "http://mcp-aggregator:7000" // Default to Kubernetes service name
 	}
 
 	port := os.Getenv("PORT")
@@ -43,10 +46,10 @@ func main() {
 		port = "8090"
 	}
 
-	// Parse the guard URL
-	target, err := url.Parse(guardURL)
+	// Parse the aggregator URL
+	target, err := url.Parse(aggregatorURL)
 	if err != nil {
-		log.Fatalf("Failed to parse guard URL: %v", err)
+		log.Fatalf("Failed to parse aggregator URL: %v", err)
 	}
 
 	// Create reverse proxy
@@ -67,7 +70,7 @@ func main() {
 
 		// Add custom attributes to the span
 		span.SetAttributes(
-			attribute.String("mcp.proxy.target", guardURL),
+			attribute.String("mcp.proxy.target", aggregatorURL),
 			attribute.String("mcp.proxy.method", req.Method),
 			attribute.String("mcp.proxy.path", req.URL.Path),
 		)
@@ -95,14 +98,14 @@ func main() {
 				attribute.String("http.method", r.Method),
 				attribute.String("http.url", r.URL.String()),
 				attribute.String("http.user_agent", r.UserAgent()),
-				attribute.String("mcp.proxy.service", "guard"),
+				attribute.String("mcp.proxy.service", "mcp-aggregator"),
 			)
 
 			// Update request context
 			r = r.WithContext(ctx)
 
 			// Log the request
-			log.Printf("Proxying %s %s to %s", r.Method, r.URL.Path, guardURL)
+			log.Printf("Proxying %s %s to %s", r.Method, r.URL.Path, aggregatorURL)
 
 			// Forward to the proxy
 			proxy.ServeHTTP(w, r)
@@ -118,12 +121,12 @@ func main() {
 
 	// Add readiness check endpoint
 	http.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
-		// Check if guard service is reachable
+		// Check if aggregator service is reachable
 		client := &http.Client{Timeout: 5 * time.Second}
-		resp, err := client.Get(guardURL + "/health")
+		resp, err := client.Get(aggregatorURL + "/health")
 		if err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte("Guard service not ready"))
+			w.Write([]byte("Aggregator service not ready"))
 			return
 		}
 		defer resp.Body.Close()
@@ -133,14 +136,14 @@ func main() {
 			w.Write([]byte("Ready"))
 		} else {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte("Guard service not healthy"))
+			w.Write([]byte("Aggregator service not healthy"))
 		}
 	})
 
 	// Handle all other requests with the proxy
 	http.Handle("/", handler)
 
-	log.Printf("MCP Policy Guard starting on port %s, forwarding to %s", port, guardURL)
+	log.Printf("MCP Policy Guard starting on port %s, forwarding to %s", port, aggregatorURL)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}

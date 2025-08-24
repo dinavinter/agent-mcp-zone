@@ -4,13 +4,15 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+print("Starting MCP Aggregator..." + "\n" + os.getenv("MCP_SERVER_URL"))
 # mcp_proxy.py      
 config = {
-     "mcpServers": {
+    "mcpServers": {
         "default": {  # For single server configs, 'default' is commonly used
             "url":  os.getenv("MCP_SERVER_URL"),
-            "transport": os.getenv("MCP_SERVER_TRANSPORT", "http"), 
-            "name": os.getenv("MCP_SERVER_NAME")
+            "transport": os.getenv("MCP_SERVER_TRANSPORT", "http"),
+            "name": os.getenv("MCP_SERVER_NAME", "mcp-middleware")
         }
     }
 }

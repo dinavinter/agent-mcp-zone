@@ -57,24 +57,24 @@
         }
       }
     },
-    "mcp-server": {
+    "mcp-servers-config": {
       "type": "parameter.v0",
-      "value": "{mcp-server.inputs.value}",
+      "value": "{mcp-servers-config.inputs.value}",
       "inputs": {
         "value": {
           "type": "string"
         }
       }
     },
-    "guard": {
+    "mcp-aggregator": {
       "type": "container.v1",
       "build": {
-        "context": "../guard",
-        "dockerfile": "../guard/Dockerfile"
+        "context": "../mcp-aggregator",
+        "dockerfile": "../mcp-aggregator/Dockerfile"
       },
       "env": {
-        "PORT": "{guard.bindings.http.targetPort}",
-        "MCP_SERVER_URL": "{mcp-server.value}",
+        "PORT": "{mcp-aggregator.bindings.http.targetPort}",
+        "MCP_SERVERS_JSON": "{\"mcpServers\":{\"default\":{\"url\":\"https://aiam-mcps-everything.cfapps.eu12.hana.ondemand.com/mcp\",\"transport\":\"http\",\"name\":\"everything\"},\"github\":{\"url\":\"https://docs.mcp.cloudflare.com/sse/\",\"transport\":\"sse\",\"name\":\"cloudflare-docs\"}}}",
         "withPrivateRegistry": "true",
         "TARGETPLATFORM": "linux/amd64"
       },
@@ -88,6 +88,28 @@
         }
       }
     },
+    "mcp-policy-guard": {
+      "type": "container.v1",
+      "build": {
+        "context": "../mcp-policy-guard",
+        "dockerfile": "../mcp-policy-guard/Dockerfile"
+      },
+      "env": {
+        "PORT": "{mcp-policy-guard.bindings.http.targetPort}",
+        "GUARD_URL": "{mcp-aggregator.bindings.http.url}",
+        "withPrivateRegistry": "true",
+        "TARGETPLATFORM": "linux/amd64"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 8090,
+          "external": true
+        }
+      }
+    },
     "chat": {
       "type": "container.v1",
       "build": {
@@ -97,8 +119,8 @@
       "env": {
         "services__ai-core__http__0": "{ai-core.bindings.http.url}",
         "services__ai-core__tcp__0": "{ai-core.bindings.tcp.url}",
-        "services__guard__http__0": "{guard.bindings.http.url}",
-        "MCP_SERVER_URL": "{guard.bindings.http.url}",
+        "services__mcp-policy-guard__http__0": "{mcp-policy-guard.bindings.http.url}",
+        "MCP_SERVER_URL": "{mcp-policy-guard.bindings.http.url}",
         "OPENAI_BASE_URL": "{ai-core.bindings.http.url}",
         "PORT": "{chat.bindings.http.targetPort}"
       },

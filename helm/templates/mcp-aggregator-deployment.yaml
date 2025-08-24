@@ -3,30 +3,30 @@ kind: Deployment
 metadata:
   annotations: {}
   labels:
-    app: guard
-  name: guard
+    app: mcp-aggregator
+  name: mcp-aggregator
 spec:
   minReadySeconds: 60
   replicas: 1
   selector:
     matchLabels:
-      app: guard
+      app: mcp-aggregator
   strategy:
     type: Recreate
   template:
     metadata:
       annotations: {}
       labels:
-        app: guard
+        app: mcp-aggregator
     spec:
       containers:
       - args: []
         envFrom:
         - configMapRef:
-            name: guard
-        image: '{{ .Values.images.guard }}'
+            name: mcp-aggregator
+        image: '{{ .Values.images.mcp-aggregator }}'
         imagePullPolicy: Always
-        name: guard
+        name: mcp-aggregator
         ports:
         - containerPort: 7000
           name: http

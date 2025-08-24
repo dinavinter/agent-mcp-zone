@@ -19,10 +19,10 @@ cd models/ai-core
 docker build -t $REGISTRY_URL/ai-core-proxy:$VERSION .
 cd ../..
 
-# Build Guard Service
-echo "📦 Building Guard Service..."
-cd guard
-docker build -t $REGISTRY_URL/mcp-guard:$VERSION .
+# Build MCP Aggregator Service
+echo "📦 Building MCP Aggregator Service..."
+cd mcp-aggregator
+docker build -t $REGISTRY_URL/mcp-aggregator:$VERSION .
 cd ..
 
 # Build Chat Agent

@@ -10,7 +10,7 @@ helm upgrade aspire-ai  ./host/aspirate-output/Chart/ -n aspire-ai --install --c
 # Wait for deployments to be ready
 echo "⏳ Waiting for deployments to be ready..."
 kubectl rollout status deployment/mcp-policy-guard -n aspire-ai --timeout=300s
-kubectl rollout status deployment/guard -n aspire-ai --timeout=300s
+kubectl rollout status deployment/mcp-aggregator -n aspire-ai --timeout=300s
 kubectl rollout status deployment/chat -n aspire-ai --timeout=300s
 kubectl rollout status deployment/ai-core -n aspire-ai --timeout=300s
 kubectl rollout status deployment/aspire-dashboard -n aspire-ai --timeout=300s
