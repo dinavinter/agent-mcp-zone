@@ -29,7 +29,7 @@ USER deno
  
  
 # Set environment variables
-ENV PORT=3000
+ENV PORT=8080
 
 EXPOSE $PORT
 

@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  services__mcp-policy-guard__http__0: http://mcp-policy-guard:8090
+  PORT: "8080"
+  POLICY_GUARD_URL: http://mcp-policy-guard:8090
+  OTEL_SERVICE_NAME: mcp-oauth
+  withPrivateRegistry: "true"
+  TARGETPLATFORM: linux/amd64
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18889
+kind: ConfigMap
+metadata:
+  annotations: {}
+  labels:
+    app: mcp-oauth
+  name: mcp-oauth

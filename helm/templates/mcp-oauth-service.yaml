@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app: mcp-oauth
+  name: mcp-oauth
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 0
+  selector:
+    app: mcp-oauth
+  type: ClusterIP

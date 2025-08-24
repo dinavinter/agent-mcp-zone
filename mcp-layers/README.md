@@ -11,6 +11,11 @@ mcp-layers/
 │   ├── pyproject.toml  # Python dependencies and configuration
 │   ├── Dockerfile      # Container build instructions
 │   └── README.md       # Service documentation
+├── mcp-oauth/          # Go-based MCP OAuth proxy
+│   ├── main.go         # Main Go OAuth proxy application
+│   ├── go.mod          # Go module dependencies
+│   ├── Dockerfile      # Container build instructions
+│   └── README.md       # Service documentation
 ├── mcp-policy-guard/   # Go-based MCP policy guard
 │   ├── main.go         # Main Go proxy application
 │   ├── go.mod          # Go module dependencies
@@ -21,13 +26,24 @@ mcp-layers/
 
 ## Architecture
 
-The MCP layers provide a two-tier architecture for MCP request processing:
+The MCP layers provide a three-tier architecture for MCP request processing:
 
 ```
-Client → MCP Policy Guard → MCP Aggregator → Multiple MCP Servers
-     ↓              ↓                    ↓              ↓
-  mcp-chat    mcp-policy-guard    mcp-aggregator    everything, cloudflare-docs, etc.
+Client → MCP OAuth → MCP Policy Guard → MCP Aggregator → Multiple MCP Servers
+     ↓           ↓              ↓                    ↓              ↓
+  mcp-chat   mcp-oauth    mcp-policy-guard    mcp-aggregator    everything, cloudflare-docs, etc.
 ```
+
+### MCP OAuth (`mcp-oauth/`)
+
+- **Language**: Go
+- **Purpose**: OAuth authorization and token injection
+- **Features**:
+  - Mock JWT token generation with groups claims
+  - Authorization header injection
+  - OpenTelemetry tracing
+  - Health and readiness endpoints
+  - Token debugging endpoints
 
 ### MCP Policy Guard (`mcp-policy-guard/`)
 
@@ -52,6 +68,13 @@ Client → MCP Policy Guard → MCP Aggregator → Multiple MCP Servers
 ## Configuration
 
 ### Environment Variables
+
+#### MCP OAuth
+```bash
+PORT=8080                                    # Service port
+POLICY_GUARD_URL=http://mcp-policy-guard:8090  # Policy guard service URL
+OTEL_SERVICE_NAME=mcp-oauth                  # Tracing service name
+```
 
 #### MCP Policy Guard
 ```bash
@@ -93,6 +116,11 @@ OTEL_SERVICE_NAME=mcp-aggregator           # Tracing service name
 ### Building Services
 
 ```bash
+# Build MCP OAuth
+cd mcp-layers/mcp-oauth
+go build -o mcp-oauth .
+./mcp-oauth
+
 # Build MCP Aggregator
 cd mcp-layers/mcp-aggregator
 uv sync
@@ -107,6 +135,9 @@ go build -o mcp-policy-guard .
 ### Docker Builds
 
 ```bash
+# Build MCP OAuth
+docker build -t mcp-oauth mcp-layers/mcp-oauth/
+
 # Build MCP Aggregator
 docker build -t mcp-aggregator mcp-layers/mcp-aggregator/
 
@@ -117,6 +148,12 @@ docker build -t mcp-policy-guard mcp-layers/mcp-policy-guard/
 ### Testing
 
 ```bash
+# Test MCP OAuth health
+curl http://localhost:8080/health
+
+# Test MCP OAuth token endpoint
+curl http://localhost:8080/token
+
 # Test MCP Policy Guard health
 curl http://localhost:8090/health
 

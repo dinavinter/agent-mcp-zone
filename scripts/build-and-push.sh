@@ -38,6 +38,9 @@ docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/chat:$VER
 echo "📦 Building MCP Policy Guard Service..."
 docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/mcp-policy-guard:$VERSION" --push ./mcp-layers/mcp-policy-guard
 
+echo "📦 Building MCP Policy OAuth Service..."
+docker buildx build --platform linux/amd64 -t "$REGISTRY_URL/aspire-ai/mcp-oauth:$VERSION" --push ./mcp-layers/mcp-oauth
+
 
 docker manifest inspect "$REGISTRY_URL/aspire-ai/mcp-aggregator:$VERSION" || echo "Manifest not found, skipping inspection"
  

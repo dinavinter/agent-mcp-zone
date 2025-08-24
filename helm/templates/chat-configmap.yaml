@@ -1,7 +1,7 @@
 apiVersion: v1
 data:
-  services__mcp-policy-guard__http__0: http://mcp-policy-guard:8090
-  MCP_SERVER_URL: http://mcp-policy-guard:8090
+  services__mcp-oauth__http__0: http://mcp-oauth:8080
+  MCP_SERVER_URL: http://mcp-oauth:8080
   OPENAI_BASE_URL: http://ai-core-proxy:3002
   OTEL_SERVICE_NAME: mcp-chat
   PORT: "8000"

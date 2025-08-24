@@ -2,5 +2,6 @@ images:
   aicoreproxy: scai-dev.common.repositories.cloud.sap/aap/sap-ai-proxy:latest
   mcpaggregator: scai-dev.common.repositories.cloud.sap/aspire-ai/mcp-aggregator:latest
   mcppolicyguard: scai-dev.common.repositories.cloud.sap/aspire-ai/mcp-policy-guard:latest
+  mcpoauth: scai-dev.common.repositories.cloud.sap/aspire-ai/mcp-oauth:latest
   chat: scai-dev.common.repositories.cloud.sap/aspire-ai/chat:latest
   aspiredashboard: mcr.microsoft.com/dotnet/aspire-dashboard:9.0

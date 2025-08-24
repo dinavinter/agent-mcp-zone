@@ -26,12 +26,12 @@ RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 USER app
 
+ENV PORT=8080
 # Expose port
-EXPOSE 8080
+EXPOSE $PORT
 
 # Set environment variables
 ENV PYTHONPATH=/app
-ENV PORT=8080
 
 # Run the application
 CMD ["uv", "run", "main.py"]

@@ -36,7 +36,7 @@ var aiCoreConfig = builder.AddParameter("ai-core-resource-group")
     }).WithDescription("AI Core configuration profile");
 
 // AI Core Credentials Secret
-var aiCoreCredentials = builder.AddParameter("ai-core-key")
+var aiCoreCredentials = builder.AddParameter("ai-core-key", secret:true)
     .WithDescription("SAP AI Core credentials JSON (upload or paste)")
     .WithCustomInput(p => new()
     {
@@ -126,13 +126,33 @@ var mcpPolicyGuard = builder
     .WithOtlpExporter()
     .WithExternalHttpEndpoints();
 
+// MCP OAuth - Go-based OAuth proxy with mock authorization headers
+var mcpOAuth = builder
+    .AddGolangApp("mcp-oauth", "../mcp-layers/mcp-oauth")
+    .WithReference(mcpPolicyGuard)
+    .WaitFor(mcpPolicyGuard)
+    .WithHttpEndpoint(port: 8080, env: "PORT", name: "http")
+    .WithEnvironment("POLICY_GUARD_URL", mcpPolicyGuard.GetEndpoint("http"))
+    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-oauth")
+    .WithEnvironment("withPrivateRegistry", "true")
+    .WithEnvironment("TARGETPLATFORM", "linux/amd64")
+    .PublishAsDockerFile(d =>
+    {
+        d.WithImageTag("aspire-ai/mcp-oauth:latest");
+        d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
+        d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
+        d.WithDockerfile("../mcp-layers/mcp-oauth");
+    })
+    .WithOtlpExporter()
+    .WithExternalHttpEndpoints();
+
 // Chat agent with AI Core support
 
 var chat=builder.AddDenoTask("chat", "../agents/chat", "start")
     .WaitFor(aiCoreProxy)
-    .WithReference(mcpPolicyGuard)
-    .WaitFor(mcpPolicyGuard)
-    .WithEnvironment("MCP_SERVER_URL", mcpPolicyGuard.GetEndpoint("http"))
+    .WithReference(mcpOAuth)
+    .WaitFor(mcpOAuth)
+    .WithEnvironment("MCP_SERVER_URL", mcpOAuth.GetEndpoint("http"))
     .WithEnvironment("OPENAI_BASE_URL", aiCoreProxy.GetEndpoint("http"))
     .WithEnvironment("OTEL_SERVICE_NAME", "mcp-chat")
     .WithHttpEndpoint(env: "PORT")
@@ -147,15 +167,15 @@ var chat=builder.AddDenoTask("chat", "../agents/chat", "start")
     });
 
 
-//MCP Inspector - With default server to policy guard
+//MCP Inspector - With default server to OAuth proxy
 
 
 builder
     .AddMcpInspector("inspector")
-    .WithMcpServer(mcpPolicyGuard, isDefault: true)
-    .WaitFor(mcpPolicyGuard)
-    .WithEnvironment("MCP_SERVER_URL", mcpPolicyGuard.GetEndpoint("http"))
-    .WithEnvironment("DEFAULT_MCP_SERVER", mcpPolicyGuard.Resource.Name)
+    .WithMcpServer(mcpOAuth, isDefault: true)
+    .WaitFor(mcpOAuth)
+    .WithEnvironment("MCP_SERVER_URL", mcpOAuth.GetEndpoint("http"))
+    .WithEnvironment("DEFAULT_MCP_SERVER", mcpOAuth.Resource.Name)
     .WithEnvironment("OTEL_SERVICE_NAME", "mcp-inspector")
      
     .WithUrlForEndpoint(McpInspectorResource.ClientEndpointName, annotation =>

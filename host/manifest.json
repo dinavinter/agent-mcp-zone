@@ -15,7 +15,8 @@
       "value": "{ai-core-key.inputs.value}",
       "inputs": {
         "value": {
-          "type": "string"
+          "type": "string",
+          "secret": true
         }
       }
     },
@@ -93,6 +94,30 @@
         }
       }
     },
+    "mcp-oauth": {
+      "type": "container.v1",
+      "build": {
+        "context": "../mcp-layers/mcp-oauth",
+        "dockerfile": "../mcp-layers/mcp-oauth/Dockerfile"
+      },
+      "env": {
+        "services__mcp-policy-guard__http__0": "{mcp-policy-guard.bindings.http.url}",
+        "PORT": "{mcp-oauth.bindings.http.targetPort}",
+        "POLICY_GUARD_URL": "{mcp-policy-guard.bindings.http.url}",
+        "OTEL_SERVICE_NAME": "mcp-oauth",
+        "withPrivateRegistry": "true",
+        "TARGETPLATFORM": "linux/amd64"
+      },
+      "bindings": {
+        "http": {
+          "scheme": "http",
+          "protocol": "tcp",
+          "transport": "http",
+          "targetPort": 8080,
+          "external": true
+        }
+      }
+    },
     "chat": {
       "type": "container.v1",
       "build": {
@@ -100,8 +125,8 @@
         "dockerfile": "../agents/chat/Dockerfile"
       },
       "env": {
-        "services__mcp-policy-guard__http__0": "{mcp-policy-guard.bindings.http.url}",
-        "MCP_SERVER_URL": "{mcp-policy-guard.bindings.http.url}",
+        "services__mcp-oauth__http__0": "{mcp-oauth.bindings.http.url}",
+        "MCP_SERVER_URL": "{mcp-oauth.bindings.http.url}",
         "OPENAI_BASE_URL": "{ai-core-proxy.bindings.http.url}",
         "OTEL_SERVICE_NAME": "mcp-chat",
         "PORT": "{chat.bindings.http.targetPort}"
