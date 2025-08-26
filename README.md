@@ -17,12 +17,20 @@ Between the user and the MCP server, you can find the MCP Guard- a chain of mult
 ### MCP Guard Chain
 > MCP Guard is an MCP proxy that protect downstream MCP servers with authentication, authorization, grant management and rate limiting.
 
-The Guard implemented with multiple layers, each implemented as its own MCP Proxy/middleware , The layers include:
+###### The Guard implemented with multiple layers, each implemented as its own MCP Proxy/middleware:
  - **OAuth**:  Supports OAuth2, API Key, and custom token-based authentication methods to verify client identities.
  - **Policy**: Enforces role-based and attribute-based access control to ensure clients can only access permitted resources and actions.
  - **Aggregation**: Combines multiple MCP servers, providing a unified interface for clients to interact with various server`s tools.
 
-
+##### TBD
+ - **Interploation** : 
+  - **Audit**: Records detailed logs of all access and actions performed through the MCP Guard, facilitating auditing and compliance checks.
+  - **Consent and Grants**: Manages user consents and permissions for accessing specific tools or data, ensuring compliance with user preferences.
+  - **Session Management**: Maintains agent and user sessions, allowing for seamless interactions across multiple requests without repeated authentication.
+<!--
+- **Logging and Monitoring**: Integrates with logging and monitoring systems to track access patterns, detect anomalies, and generate audit trails for compliance purposes.
+  - **Rate Limiting**: Controls the rate of incoming requests to prevent abuse and ensure fair usage among clients.
+-->
 
 #### MCP OAuth Layer
 ![oauth.png](docs/oauth.png)
