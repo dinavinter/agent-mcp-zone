@@ -1,3 +1,6 @@
 {
-  "appHostPath": "../host/host.csproj"
+  "appHostPath": "../host/host.csproj",
+  "features": {
+    "execCommandEnabled": "true"
+  }
 }

@@ -1,21 +1,12 @@
 #pragma warning disable ASPIREINTERACTION001
 #pragma warning disable ASPIREHOSTINGPYTHON001
 #pragma warning disable ASPIREPUBLISHERS001
+using AspireHost.resources;
+using Microsoft.Extensions.DependencyInjection;
 using static Aspire.Hosting.InputType;
 
 //todo: session redis
 var builder = DistributedApplication.CreateBuilder(args);
-// var imageRegistry = builder.AddParameter("image-registry","scai-dev.common.repositories.cloud.sap", true)
-//     .WithDescription("Container image registry for publishing images")
-//     .WithCustomInput(p => new()
-//     {
-//         InputType = Text,
-//         Value = "scai-dev.common.repositories.cloud.sap",
-//         Label = p.Name,
-//         Placeholder = "Container image registry (e.g. Docker Hub user or Azure Container Registry name)",
-//         Description = p.Description
-//     }).WithDescription("Container image registry");
-
 
 // AI Core Configuration
 var aiCoreConfig = builder.AddParameter("ai-core-resource-group")
@@ -53,66 +44,131 @@ var aiCoreProxy = builder.AddContainer("ai-core-proxy", "scai-dev.common.reposit
     .WithEnvironment("OTEL_SERVICE_NAME", "mcp-ai-core")
     .WithOtlpExporter();
 
-// AI Core Test Client Service
-// var aiCoreTestClient = builder.AddDenoTask("ai-core-client", "../models/ai-core", "client")
-//     .WithHttpEndpoint(port: 3003, env: "PORT")
-//     .WithEnvironment("AI_CORE_PROXY_URL", aiCoreProxy.GetEndpoint("http"))
-//     .WithEndpoint();
 
+// MCP Guard with OAuth, Policy and Aggregation layers
 
-var targetMcP = builder.AddParameter("mcp-server")
-    .WithDescription("The URL of the external service.")
-    .WithCustomInput(p => new()
+var mcpGuard = builder.AddResource(new McpGuardResource())
+    .WithCommand("explain", "Explain", executeCommand: async context =>
     {
-        InputType = Text,
-        Value = "https://aiam-mcps-everything.cfapps.eu12.hana.ondemand.com/mcp",
-        Options =
-        [
-            new KeyValuePair<string, string>("everything",
-                "https://aiam-mcps-everything.cfapps.eu12.hana.ondemand.com/mcp"),
-            new KeyValuePair<string, string>("cloudflare", "https://docs.mcp.cloudflare.com/sse"),
-        ],
-        Label = p.Name,
-        Placeholder = $"Select or type mcp server to guard {p.Name}",
-        Description = p.Description
-    }).WithDescription("Target McP server URL")
-    .WithUrl("https://aiam-mcps-everything.cfapps.eu12.hana.ondemand.com/mcp");
+        var interactionService = context.ServiceProvider.GetRequiredService<IInteractionService>();
+        if (interactionService is not { IsAvailable: true })
+        {
+            throw new InvalidOperationException("Interaction service is not available.");
+        }
+
+        //example message box with markdown
+        await interactionService.PromptMessageBoxAsync(
+            "MCP Guard: Details",
+            """
+            ## 🛡️ MCP Guard
+
+            > MCP Guard is an MCP proxy that protect downstream MCP servers with authentication, authorization, grant management and rate limiting.
+
+            #### The Guard implemented with multiple layers, each implemented as its own MCP Proxy/middleware , allowing for modularity and flexibility in deployment.
+
+            ###### The layers include:
+            - **OAuth**:  Supports OAuth2, API Key, and custom token-based authentication methods to verify client identities.
+            - **Policy Enforcement**: *Policy Enforcement* Implements role-based and attribute-based access control to ensure clients can only access permitted resources and actions.
+            - **Aggregation**: Combines responses from multiple MCP servers, providing a unified interface for clients to interact with various backend services.
+
+            ###### TBD:
+              - **Logging and Monitoring **: Integrates with logging and monitoring systems to track access patterns, detect anomalies, and generate audit trails for compliance purposes.
+              - **Audit **: Records detailed logs of all access and actions performed through the MCP Guard, facilitating auditing and compliance checks.
+              - **Rate Limiting **: Controls the rate of incoming requests to prevent abuse and ensure fair usage among clients.
+              - **Consent and Grants**: Manages user consents and permissions for accessing specific tools or data, ensuring compliance with user preferences.
+              - **Session Management**: Maintains agent and user sessions, allowing for seamless interactions across multiple requests without repeated authentication.
+            """,
 
 
-//MCP Layers
+            new MessageBoxInteractionOptions
+            {
+                Intent = MessageIntent.Information,
+                EnableMessageMarkdown = true,
+                PrimaryButtonText = "Awesome"
+            }
+        );
+
+        return CommandResults.Success();
+    });
 
 
 var mcpAggregator = builder
-    .AddUvApp(       
-        name: "mcp-aggregator",
-        projectDirectory: "../mcp-layers/mcp-aggregator",
-        scriptPath: "main.py"
-        
-    )
-    .WithHttpEndpoint(port: 7000, env: "PORT", name: "http" )
-    .WithEnvironment("MCP_SERVER_URL", targetMcP)
-    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-aggregator")
+    .AddContainer("aggregator", "mcp-aggregator")
+    .WithImageRegistry("scai-dev.common.repositories.cloud.sap")
+    .WithImageTag("latest")
+    .WithHttpEndpoint(port: 3001, env: "PORT", name: "http", targetPort: 3001)
+    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-aggregator-guard")
     .WithEnvironment("withPrivateRegistry", "true")
-    .WithEnvironment("TARGETPLATFORM", "linux/amd64")
-    .PublishAsDockerFile(d =>
-    {
-        d.WithImageTag("aspire-ai/mcp-aggregator:latest");
-        d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
-        
-        d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
-        d.WithDockerfile("../mcp-layers/mcp-aggregator");
-    })
+    .WithEnvironment("TARGETPLATFORM", "linux/amd64") 
     .WithOtlpExporter()
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithCommand("explain", "Explain", executeCommand: async context =>
+    {
+        var interactionService = context.ServiceProvider.GetRequiredService<IInteractionService>();
+        if (interactionService is not { IsAvailable: true })
+        {
+            throw new InvalidOperationException("Interaction service is not available.");
+        }
+
+        //example message box with markdown
+        await interactionService.PromptMessageBoxAsync(
+            "MCP Aggregator Layer",
+            """
+            You can find the source code on GitHub
+            
+            [✏️ https://github.tools.sap/AIAM/mcp-aggregator](https://github.tools.sap/AIAM/mcp-aggregator) 
+            
+            > Aggregates multiple MCP servers into a single endpoint.
+            
+            #### API Endpoints
+            PORT 3001
+            **draft**
+            The MCP Aggregator exposes the follwing endpoint:
+            
+            - `POST /mcp` - MCP request handling
+            - `GET /health` - Health check endpoint
+            
+            
+            #### Configuration
+
+            ```json
+            {
+                "mcpServers": {
+                  "github": {
+                    "type": "http",
+                    "url": "https://api.githubcopilot.com/mcp/"
+                  }, 
+                  "sequential-thinking": {
+                    "command": "npx",
+                    "args": [
+                      "-y",
+                      "@modelcontextprotocol/server-sequential-thinking"
+                  ] } } 
+            }
+            ```
+
+            """,
+            new MessageBoxInteractionOptions
+            {
+                Intent =MessageIntent.Information,
+                EnableMessageMarkdown = true,
+                PrimaryButtonText = "Awesome"
+            }
+        );
+
+        return CommandResults.Success();
+    })
+    //TODO: fix bind mount to allow updates of mcp-servers.json.
+    // .WithBindMount("./aggregator", "/aggregator", isReadOnly: false)
+    .WithAddMCPServersCommand("./mcp-servers.json")
+    .WithParentRelationship(mcpGuard);
 
 
-// MCP Policy Guard - Go-based proxy with OpenTelemetry tracing
 var mcpPolicyGuard = builder
-    .AddGolangApp("mcp-policy-guard", "../mcp-layers/mcp-policy-guard")
-    .WithReference(mcpAggregator)
+    .AddGolangApp("policy", "../templates/mcp-layer-go")
     .WaitFor(mcpAggregator)
     .WithHttpEndpoint(port: 8090, env: "PORT", name: "http")
-    .WithEnvironment("GUARD_URL", mcpAggregator.GetEndpoint("http"))
+    .WithEnvironment("MCP_SERVER_URL", $"{mcpAggregator.GetEndpoint("http")}/mcp")
     .WithEnvironment("OTEL_SERVICE_NAME", "mcp-policy-guard")
     .WithEnvironment("withPrivateRegistry", "true")
     .WithEnvironment("TARGETPLATFORM", "linux/amd64")
@@ -121,30 +177,106 @@ var mcpPolicyGuard = builder
         d.WithImageTag("aspire-ai/mcp-policy-guard:latest");
         d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
         d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
-        d.WithDockerfile("../mcp-layers/mcp-policy-guard");
+        d.WithDockerfile("../templates/mcp-layer-go");
     })
     .WithOtlpExporter()
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithCommand("explain", "Explain", executeCommand: async context =>
+    {
+        var interactionService = context.ServiceProvider.GetRequiredService<IInteractionService>();
+        if (interactionService is not { IsAvailable: true })
+        {
+            throw new InvalidOperationException("Interaction service is not available.");
+        }
 
-// MCP OAuth - Go-based OAuth proxy with mock authorization headers
+        //example message box with markdown
+        await interactionService.PromptMessageBoxAsync(
+            "\u264a  MCP Policy Layer",
+            """
+            You can find the source code on GitHub
+            [✏️ https://github.tools.sap/AIAM/mcp-guard/tree/i551404_testing](https://github.tools.sap/AIAM/mcp-guard/tree/i551404_testing) 
+
+            > Provides MCP Proxy that evaluate and enforce fine-grained, dynamic AuthZ rules before downstream forwarding
+            
+            #### API Endpoints
+            PORT 8090
+            **draft**
+            -  `POST /` - MCP request handling
+            -  `GET /health` - Health check endpoint
+            -  `GET /policies` - View and manage policies
+            -  `POST /policies` - Add new policy
+             
+             
+            """,
+            new MessageBoxInteractionOptions
+            {
+                Intent = MessageIntent.Information,
+                EnableMessageMarkdown = true,
+                PrimaryButtonText = "Awesome"
+            }
+        );
+
+        return CommandResults.Success();
+    }) .WithParentRelationship(mcpGuard);
+
 var mcpOAuth = builder
-    .AddGolangApp("mcp-oauth", "../mcp-layers/mcp-oauth")
+    .AddGolangApp("oauth", "../templates/mcp-layer-go")
     .WithReference(mcpPolicyGuard)
     .WaitFor(mcpPolicyGuard)
     .WithHttpEndpoint(port: 8080, env: "PORT", name: "http")
-    .WithEnvironment("POLICY_GUARD_URL", mcpPolicyGuard.GetEndpoint("http"))
-    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-oauth")
+    .WithEnvironment("MCP_SERVER_URL", mcpPolicyGuard.GetEndpoint("http"))
+    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-oauth-guard")
     .WithEnvironment("withPrivateRegistry", "true")
     .WithEnvironment("TARGETPLATFORM", "linux/amd64")
     .PublishAsDockerFile(d =>
     {
-        d.WithImageTag("aspire-ai/mcp-oauth:latest");
+        d.WithImageTag("mcp-guard/oauth:latest");
         d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
         d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
-        d.WithDockerfile("../mcp-layers/mcp-oauth");
+        d.WithDockerfile("../templates/mcp-layer-go");
     })
     .WithOtlpExporter()
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithParentRelationship(mcpGuard)
+    .WithCommand("explain", "Explain", executeCommand: async context =>
+    {
+        var interactionService = context.ServiceProvider.GetRequiredService<IInteractionService>();
+        if (interactionService is not { IsAvailable: true })
+        {
+            throw new InvalidOperationException("Interaction service is not available.");
+        }
+
+        //example message box with markdown
+        await interactionService.PromptMessageBoxAsync(
+            "\ud83d\udd10 MCP OAuth Layer",
+            """
+            You can find the source code on GitHub
+            [✏️ https://github.tools.sap/AIAM/mcp-oauth](https://github.tools.sap/AIAM/mcp-oauth) 
+
+            > OAuth2 and API Key authentication for MCP clients.
+            
+            ### API Endpoints
+            **draft**
+            - PORT 8080
+            - `POST /` - MCP request handling
+            - `GET /health` - Health check endpoint
+            - `POST /login` - OAuth2 login endpoint
+            - `GET /oauth/callback` - OAuth2 callback endpoint
+            
+            > Provides MCP Proxy that handles OAuth2 authentication and token management.
+             
+            """,
+            new MessageBoxInteractionOptions
+            {
+                Intent = MessageIntent.Information,
+                EnableMessageMarkdown = true,
+                PrimaryButtonText = "Awesome"
+            }
+        );
+
+        return CommandResults.Success();
+    });
+
 
 // Chat agent with AI Core support
 
@@ -168,8 +300,7 @@ var chat=builder.AddDenoTask("chat", "../agents/chat", "start")
 
 
 //MCP Inspector - With default server to OAuth proxy
-
-
+ 
 builder
     .AddMcpInspector("inspector")
     .WithMcpServer(mcpOAuth, isDefault: true)
@@ -190,16 +321,18 @@ builder
         annotation.DisplayOrder = 3;
         annotation.DisplayLocation = UrlDisplayLocation.DetailsOnly;
     })
-    // .PublishAsDockerFile(d =>
-    // {
-    //     d.WithImageTag("aspire-ai/inspector:latest");
-    //     d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
-    //     
-    //     d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
-    //     d.WithDockerfile("inspector", "../inspector", "Dockerfile");
-    // })
 
-    .WithOtlpExporter()
-    ;
+    .WithOtlpExporter() ;
+   
 
 builder.Build().Run();
+
+public class McpGuardResource:IResource
+{
+    /// <inheritdoc />
+    public string Name { get; } = "scai-mcp-guard";
+
+    /// <inheritdoc />
+    public ResourceAnnotationCollection Annotations { get; } = new();
+}
+

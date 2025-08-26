@@ -1,0 +1,115 @@
+.NET Aspire Java/Spring hosting integration
+06/26/2025
+Includes: Hosting integration included Hosting integration only — Client integration not included Client integration not included
+
+ Note
+
+This integration is part of the .NET Aspire Community Toolkit and isn't officially supported by the .NET Aspire team.
+
+In this article, you learn how to use the .NET Aspire Java/Spring hosting integration to host Java/Spring applications using either the Java runtime or a container.
+
+Prerequisites
+This integration requires the OpenTelemetry Agent for Java to be downloaded and placed in the agents directory in the root of the project. Depending on your preferred shell, use either of the following commands to download the agent:
+
+Bash
+PowerShell
+Bash
+
+Copy
+# bash/zsh
+mkdir -p ./agents
+wget -P ./agents \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
+Linux and macOS certificate trust
+On Linux and macOS platforms, you might need to import the .NET Aspire OpenTelemetry certificate into the Java certificate store for telemetry to work properly. Without this step, your Java application will start successfully, but telemetry collection might fail with certificate errors.
+
+To add the certificate to the Java truststore, you can use the following steps:
+
+Export the .NET Aspire dashboard certificate (this varies by your setup)
+Import it into the Java truststore using the keytool command:
+Bash
+
+Copy
+keytool -import -trustcacerts -alias aspire-dashboard \
+    -file aspire-dashboard.crt \
+    -keystore $JAVA_HOME/lib/security/cacerts \
+    -storepass changeit
+ Note
+
+The exact steps for obtaining and importing the certificate may vary depending on your development environment and .NET Aspire configuration.
+
+Get started
+To get started with the .NET Aspire Java/Spring hosting integration, install the 📦 CommunityToolkit.Aspire.Hosting.Java NuGet package in the AppHost project.
+
+.NET CLI
+PackageReference
+.NET CLI
+
+Copy
+dotnet add package CommunityToolkit.Aspire.Hosting.Java
+For more information, see dotnet add package or Manage package dependencies in .NET applications.
+
+Example Usage
+The following sections detail various example usage scenarios, from hosting a containerized Spring app to hosting an executable Spring app.
+
+Container hosting
+Executable hosting
+In the Program.cs file of your AppHost project, call the AddSpringApp method to define the containerized Spring app. The JavaAppContainerResourceOptions allows you to specify the container image and OpenTelemetry agent configuration.
+
+C#
+
+Copy
+var containerapp = builder.AddSpringApp(
+    "containerapp",
+    new JavaAppContainerResourceOptions
+    {
+        ContainerImageName = "your-registry/your-spring-app:latest",
+        OtelAgentPath = "./agents"
+    });
+The ContainerImageName should point to your Spring Boot application's container image, and OtelAgentPath specifies the path within the container where the OpenTelemetry Java agent is located.
+
+See also
+Java developer resources
+.NET Aspire Community Toolkit GitHub repo
+ Collaborate with us on GitHub
+The source for this content can be found on GitHub, where you can also create and review issues and pull requests. For more information, see our contributor guide.
+
+.NET Aspire feedback
+
+.NET Aspire is an open source project. Select a link to provide feedback:
+
+ Open a documentation issue
+ Provide product feedback
+Additional resources
+Documentation
+
+Aspire overview - .NET Aspire
+
+Learn about Aspire, an application stack designed to improve the experience of building distributed applications.
+
+.NET Aspire docs: What's new for April 2025 - .NET Aspire
+
+What's new in the .NET Aspire docs for April 2025.
+
+Community Toolkit Python hosting extensions - .NET Aspire
+
+Learn about the .NET Aspire Community Toolkit Python hosting extensions package which provides extra functionality to the .NET Aspire Python hosting package.
+
+Show 4 more
+Training
+
+Module
+
+Deploy a Spring Boot app to Azure Container Apps - Training
+
+In this module, you learn how to deploy a Spring Boot app to Azure Container Apps. You deploy a Spring Boot application to Azure Container Apps and maintain it using the built-in Java stack.
+
+Events
+
+Microsoft AI Tour
+
+Aug 26, 3 PM - Aug 26, 3 PM
+
+Take your business to the AI frontier—join our free Microsoft event!
+
+Learn more

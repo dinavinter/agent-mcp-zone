@@ -1,0 +1,22 @@
+﻿{
+    "mcpServers": {
+      "everything": {
+        "autoApprove": [],
+        "disabled": false,
+        "timeout": 300,
+        "type": "http",
+        "url": "https://aiam-mcps-mcp-everything-router.cfapps.eu12.hana.ondemand.com/mcp"
+      }, 
+      "sequential-thinking": {
+        "autoApprove": [],
+        "disabled": false,
+        "timeout": 3000,
+        "type": "stdio",
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-sequential-thinking"
+        ]
+      }
+    } 
+}

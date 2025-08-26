@@ -1,75 +1,107 @@
-# Agent Application Programming (AAP)
+# SCAI INTEGRATION REFERENCE
 
-Template repository with the user -> agent -> mcp-policy-guard -> mcp-aggregator -> multiple-mcp-servers chain, meant to ease deployments and integration of agents and aggregators with observability.
+This repository provides a reference implementation for integrating multiple MCP (Model Context Protocol) servers using Aspire AppHost. It includes various layers such as OAuth authentication, policy enforcement, and aggregation of multiple MCP servers.
 
-## Architecture Overview
+Between the user and the MCP server, you can find the MCP Guard- a chain of multiple security layers to handle authentication, authorization, logging, and other functionalities.
+ 
 
+## Resources
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Chat Client   │───▶│ MCP Policy Guard│───▶│ MCP Aggregator  │
-│   (mcp-chat)    │    │ (mcp-policy-    │    │ (mcp-aggregator)│
-└─────────────────┘    │   guard)        │    └─────────┬───────┘
-         │             └─────────────────┘              │
-         ▼                                              ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   AI Core       │    │   Inspector     │    │  Multiple MCP   │
-│   (mcp-ai-core) │    │ (mcp-inspector) │    │   Servers       │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
+![resources.png](docs/resources.png)
 
 
+![graph2.png](docs/graph2.png)
+
+[//]: # (![graph.png]&#40;docs/graph.png&#41;)
+
+### MCP Guard Chain
+MCP Guard is a proxy that adds observability and policy enforcement to the MCP protocol flow without modifying the existing MCP protocol.
+The guard itself chains smaller proxy layer, each responsible for a specific task, such as authentication, authorization, logging, or request transformation, and preserve the MCP protocol.
+
+#### MCP OAuth Layer
+![oauth.png](docs/oauth.png)
+
+You can find the source code on GitHub
+
+[✏️ https://github.tools.sap/AIAM/mcp-oauth](https://github.tools.sap/AIAM/mcp-oauth)
+
+> Provides MCP Proxy that handles OAuth2 authentication and token management.
+
+##### API Endpoints
+**draft**
+-  [x] `POST /` - MCP request handling
+-  [ ] `GET /health` - Health check endpoint
+-  [ ] `POST /login` - OAuth2 login endpoint
+-  [ ] `GET /oauth/callback` - OAuth2 callback endpoint
+-  [ ] `POST /credentials` - Endpoint to set client credentials
+
+`PORT 8080`
 
 
-## Current Implementation
-![graph.png](docs/graph.png)
-
-### MCP Policy Guard - Go MCP Proxy with OpenTelemetry
-The system  includes a **Go-based MCP Proxy** that adds OpenTelemetry tracing only to the MCP requests, providing observability into the request flow without modifying the MCP protocol itself.
-To be replaced with an actual gaurd implementation - via docker image or http url
-
-The **MCP Proxy** (`/mcp-policy-gaurd/`) is a Go-based service that:
-- **Forwards MCP requests** to the MCP Aggregator with policy enforcement
-- **Adds OpenTelemetry tracing** to all requests for observability
-- **Provides health checks** for Kubernetes deployments  
-- **Injects trace context** into downstream requests for distributed tracing
-- **Handles errors gracefully** with proper logging and span recording
-
-Key features:
-- Zero-modification proxy (preserves MCP protocol)
-- Comprehensive tracing with span attributes
-- Health (`/health`) and readiness (`/ready`) endpoints
-- Kubernetes-ready with liveness/readiness probes
-- Configurable via environment variables
-
-
-
-### MCP  Aggregator - Python McP Proxy 
-The current implementation provides a **placeholder** proxy to  demonstrates integration between different layers
-Will be replaced with an actual aggregator implementation - via docker image or http url
-
+#### MCP Policy 
 
 ![mcp-aggregator.png](docs/guard.png)
 
-[./mcp-layers/mcp-aggregator/main.py](./mcp-layers/mcp-aggregator/main.py) is a simple proxy that uses the `fastmcp` library to create a proxy server for the Model Context Protocol (MCP). It allows you to connect to an MCP server and provides a basic interface for interacting with it.
-```python
-# mcp-layers/mcp-aggregator/main.py
+You can find the source code on GitHub
 
-...
-config = getConfig()
+[✏️ https://github.tools.sap/AIAM/mcp-guard/tree/i551404_testing](https://github.tools.sap/AIAM/mcp-guard/tree/i551404_testing)
 
-# Create a proxy with full MCP feature support
-proxy = FastMCP.as_proxy(
-   ProxyClient(config),
-   name=os.getenv("NAME", "mcp-aggregator")
-)
+> Provides MCP Proxy that evaluate and enforce fine-grained, dynamic AuthZ rules before downstream forwarding
+            
+#### API Endpoints
+**draft**
+-  [x] `POST /` - MCP request handling 
+-  [ ] `GET /health` - Health check endpoint
+-  [ ] `GET /policies` - View and manage policies
+-  [ ] `POST /policies` - Add new policy
 
-# Run the proxy
-if __name__ == "__main__":
-   proxy.run(transport="http", host="0.0.0.0", port=os.getenv("PORT", 8080))
+`PORT 8090`
+
+#### MCP  Aggregator 
+Aggregates multiple MCP servers into a single endpoint, allowing clients to interact with multiple models seamlessly.
+  
+![aggregator.png](docs/aggregator.png)
+
+You can find the source code on GitHub
+
+[✏️ https://github.tools.sap/AIAM/mcp-aggregator](https://github.tools.sap/AIAM/mcp-aggregator) 
+
+> Aggregates multiple MCP servers into a single endpoint.
+
+#### API Endpoints
+**draft**
+
+
+The MCP Aggregator exposes the following endpoint:
+
+- [X] `POST /mcp` - MCP request handling
+- [ ] `GET /health` - Health check endpoint
+- [ ] `GET /servers` - List configured MCP servers
+- [ ] `POST /servers` - Add new MCP server
+- [ ] `DELETE /servers/{name}` - Remove MCP server
+
+`PORT 3001`
+
+
+#### Configuration
+
+```json
+{
+    "mcpServers": {
+      "github": {
+        "type": "http",
+        "url": "https://api.githubcopilot.com/mcp/"
+      }, 
+      "sequential-thinking": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-sequential-thinking"
+      ] } } 
+}
 ```
 
-## MCP Inspector
+### MCP Inspector
 To the MCP Server attached the MCP inspector, configured with the mcp-aggregator URL. This allows you to inspect the MCP server's tools and capabilities.
 
 | ![inspector.png](docs/inspector-graph.png) |  ![inspector.png](docs/inspector.png)  |
@@ -84,37 +116,7 @@ Simple basic agent API using copilotkit
 
 
 [./agents/chat/main.tsx](./agents/chat/main.tsx) is a simple chat agent that uses the MCP server to process chat requests. It allows you to test the MCP server's capabilities by sending prompts and receiving responses.
-
-```tsx
-app.post("/chat", async (c) => {
-   const body = await c.req.parseBody();
-   const url = body.url as string;
-   const prompt = body.prompt as string;
-
-   const mcpClient = await createMcpClient({
-      transport: new StreamableHTTPClientTransport(new URL(url)),
-   });
-
-   const tools = await mcpClient.tools();
-
-   const {textStream, text} = await aiStreamText({
-      model: azure("gpt-4o"),
-      prompt,
-      tools,
-   });
-   const s = textStream.pipeThrough(new TextDecoderStream());
-   console.log("Streaming response from MCP server...", await text);
-
-   return streamText(c, async (stream) => {
-      for await (const chunk of s) {
-         stream.write(chunk);
-      }
-      console.log("Streaming complete.");
-   });
-});
-
-```
-
+ 
 **Replace any part with your own implementation, such as the mcp-aggregator, the agent, or the MCP server URL,**
 
 
@@ -157,6 +159,23 @@ helm install aspire-ai ./helm --namespace aspire-ai --create-namespace
 - **Use environment variables** for configuration
 - **Follow the MCP protocol** standards
 - **Use session isolation** for concurrent safety
+
+### Screenshots
+
+##### Resource Menu 
+![policy_menu](docs/screenshots/policy-menu.png)
+
+##### Markdown Documentation
+![oauth-md.png](docs/screenshots/oauth-md.png)
+##### Custom Commands
+![agg.png](docs/screenshots/set-server.png)
+
+
+
+### Templates
+- [Go MCP Layer](templates/mcp-layer-go/README.md)
+- [Java MCP Layer](templates/mcp-layer-java/README.md)
+- [Python MCP Layer](templates/mcp-layer-python/README.md)
 
 
 
