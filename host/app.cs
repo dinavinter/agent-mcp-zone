@@ -64,7 +64,7 @@ var mcpGuard = builder.AddResource(new McpGuardResource())
 
             > MCP Guard is an MCP proxy that protect downstream MCP servers with authentication, authorization, grant management and rate limiting.
 
-            #### The Guard implemented with multiple layers, each implemented as its own MCP Proxy/middleware , allowing for modularity and flexibility in deployment.
+            The Guard implemented with multiple layers, each implemented as its own MCP Proxy/middleware , allowing for modularity and flexibility in deployment.
 
             ###### The layers include:
             - **OAuth**:  Supports OAuth2, API Key, and custom token-based authentication methods to verify client identities.
