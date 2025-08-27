@@ -117,7 +117,7 @@ The MCP Aggregator exposes the following endpoint:
 }
 ```
 
-## External Resources for Demo and Debuging 
+## Resources for Demo and Debuging 
 ### MCP Chat Agent
 
 Simple basic agent API using copilotkit
