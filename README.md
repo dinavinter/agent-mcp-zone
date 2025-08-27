@@ -32,16 +32,17 @@ Between the user and the MCP server, you can find the MCP Guard- a chain of mult
   - **Rate Limiting**: Controls the rate of incoming requests to prevent abuse and ensure fair usage among clients.
 -->
 
-#### MCP OAuth Layer
+### MCP OAuth Layer
+> Provides MCP Proxy that handles OAuth2 authentication and token management.
+
 ![oauth.png](docs/oauth.png)
 
 You can find the source code on GitHub
 
 [✏️ https://github.tools.sap/AIAM/mcp-oauth](https://github.tools.sap/AIAM/mcp-oauth)
 
-> Provides MCP Proxy that handles OAuth2 authentication and token management.
 
-##### API Endpoints
+#### API Endpoints
 **draft**
 -  [x] `POST /` - MCP request handling
 -  [ ] `GET /health` - Health check endpoint
@@ -52,7 +53,9 @@ You can find the source code on GitHub
 `PORT 8080`
 
 
-#### MCP Policy 
+### MCP Policy 
+
+> Provides MCP Proxy that evaluate and enforce fine-grained, dynamic AuthZ rules before downstream forwarding
 
 ![mcp-aggregator.png](docs/guard.png)
 
@@ -60,8 +63,7 @@ You can find the source code on GitHub
 
 [✏️ https://github.tools.sap/AIAM/mcp-guard/tree/i551404_testing](https://github.tools.sap/AIAM/mcp-guard/tree/i551404_testing)
 
-> Provides MCP Proxy that evaluate and enforce fine-grained, dynamic AuthZ rules before downstream forwarding
-            
+
 #### API Endpoints
 **draft**
 -  [x] `POST /` - MCP request handling 
@@ -71,16 +73,16 @@ You can find the source code on GitHub
 
 `PORT 8090`
 
-#### MCP  Aggregator 
-Aggregates multiple MCP servers into a single endpoint, allowing clients to interact with multiple models seamlessly.
+### MCP Aggregator 
+
+> Aggregates multiple MCP servers into a single endpoint.
   
-![aggregator.png](docs/aggregator.png)
+![aggregator](docs/aggregator.png)
 
 You can find the source code on GitHub
 
 [✏️ https://github.tools.sap/AIAM/mcp-aggregator](https://github.tools.sap/AIAM/mcp-aggregator) 
 
-> Aggregates multiple MCP servers into a single endpoint.
 
 #### API Endpoints
 **draft**
@@ -115,12 +117,7 @@ The MCP Aggregator exposes the following endpoint:
 }
 ```
 
-### MCP Inspector
-To the MCP Server attached the MCP inspector, configured with the mcp-aggregator URL. This allows you to inspect the MCP server's tools and capabilities.
-
-| ![inspector.png](docs/inspector-graph.png) |  ![inspector.png](docs/inspector.png)  |
-|--------------------------------------------|---|
-
+## External Resources for Demo and Debuging 
 ### MCP Chat Agent
 
 Simple basic agent API using copilotkit
@@ -130,7 +127,17 @@ Simple basic agent API using copilotkit
 
 
 [./agents/chat/main.tsx](./agents/chat/main.tsx) is a simple chat agent that uses the MCP server to process chat requests. It allows you to test the MCP server's capabilities by sending prompts and receiving responses.
- 
+
+
+
+### MCP Inspector
+To the MCP Server attached the MCP inspector, configured with the mcp-aggregator URL. This allows you to inspect the MCP server's tools and capabilities.
+
+| ![inspector.png](docs/inspector-graph.png) |  ![inspector.png](docs/inspector.png)  |
+|--------------------------------------------|---|
+
+
+
 **Replace any part with your own implementation, such as the mcp-aggregator, the agent, or the MCP server URL,**
 
 

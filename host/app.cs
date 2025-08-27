@@ -97,7 +97,7 @@ var mcpAggregator = builder
     .WithImageRegistry("scai-dev.common.repositories.cloud.sap")
     .WithImageTag("latest")
     .WithHttpEndpoint(port: 3001, env: "PORT", name: "http", targetPort: 3001)
-    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-aggregator-guard")
+    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-aggregator")
     .WithEnvironment("withPrivateRegistry", "true")
     .WithEnvironment("TARGETPLATFORM", "linux/amd64") 
     .WithOtlpExporter()
