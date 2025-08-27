@@ -5,7 +5,7 @@ This repository provides a reference implementation for integrating multiple MCP
 Between the user and the MCP server, you can find the MCP Guard- a chain of multiple security layers to handle authentication, authorization, logging, and other functionalities.
  
 
-## Resources
+# Resources Overview
 
 ![resources.png](docs/resources.png)
 
@@ -14,8 +14,10 @@ Between the user and the MCP server, you can find the MCP Guard- a chain of mult
 
 [//]: # (![graph.png]&#40;docs/graph.png&#41;)
 
-### MCP Guard Chain
-> MCP Guard is an MCP proxy that protect downstream MCP servers with authentication, authorization, grant management and rate limiting.
+----
+ 
+## SCAI Componnets: The MCP Guard 
+> MCP Guard is an MCP proxy that protect downstream MCP servers with authentication, authorization, grant management and consents.
 
 ###### The Guard implemented with multiple layers, each implemented as its own MCP Proxy/middleware:
  - **OAuth**:  Supports OAuth2, API Key, and custom token-based authentication methods to verify client identities.
@@ -31,7 +33,7 @@ Between the user and the MCP server, you can find the MCP Guard- a chain of mult
 - **Logging and Monitoring**: Integrates with logging and monitoring systems to track access patterns, detect anomalies, and generate audit trails for compliance purposes.
   - **Rate Limiting**: Controls the rate of incoming requests to prevent abuse and ensure fair usage among clients.
 -->
-
+---
 ### MCP OAuth Layer
 > Provides MCP Proxy that handles OAuth2 authentication and token management.
 
@@ -52,6 +54,7 @@ You can find the source code on GitHub
 
 `PORT 8080`
 
+----
 
 ### MCP Policy 
 
@@ -72,6 +75,8 @@ You can find the source code on GitHub
 -  [ ] `POST /policies` - Add new policy
 
 `PORT 8090`
+
+----
 
 ### MCP Aggregator 
 
@@ -116,8 +121,9 @@ The MCP Aggregator exposes the following endpoint:
       ] } } 
 }
 ```
+----
 
-## Resources for Demo and Debuging 
+## Resources for Demo & Debug
 ### MCP Chat Agent
 
 Simple basic agent API using copilotkit
@@ -128,7 +134,7 @@ Simple basic agent API using copilotkit
 
 [./agents/chat/main.tsx](./agents/chat/main.tsx) is a simple chat agent that uses the MCP server to process chat requests. It allows you to test the MCP server's capabilities by sending prompts and receiving responses.
 
-
+-----
 
 ### MCP Inspector
 To the MCP Server attached the MCP inspector, configured with the mcp-aggregator URL. This allows you to inspect the MCP server's tools and capabilities.
@@ -136,7 +142,7 @@ To the MCP Server attached the MCP inspector, configured with the mcp-aggregator
 | ![inspector.png](docs/inspector-graph.png) |  ![inspector.png](docs/inspector.png)  |
 |--------------------------------------------|---|
 
-
+----
 
 **Replace any part with your own implementation, such as the mcp-aggregator, the agent, or the MCP server URL,**
 
