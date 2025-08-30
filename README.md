@@ -190,12 +190,12 @@ helm install aspire-ai ./helm --namespace aspire-ai --create-namespace
 ### Screenshots
 
 ##### Resource Menu 
-![policy_menu](docs/images/screenshots/policy-menu.png)
+![policy_menu](docs/screenshots/policy-menu.png)
 
 ##### Markdown Documentation
-![oauth-md.png](docs/images/screenshots/oauth-md.png)
+![oauth-md.png](docs/screenshots/oauth-md.png)
 ##### Custom Commands
-![agg.png](docs/images/screenshots/set-server.png)
+![agg.png](docs/screenshots/set-server.png)
 
 
 
