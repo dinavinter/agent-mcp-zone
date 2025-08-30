@@ -277,6 +277,25 @@ var mcpOAuth = builder
         return CommandResults.Success();
     });
 
+var mcpTypescript = builder
+    .AddNodeApp("typescript", "../templates/mcp-layer-typescript")
+    .WaitFor(mcpAggregator)
+    .WithHttpEndpoint(port: 8070, env: "PORT", name: "http")
+    .WithEnvironment("MCP_SERVER_URL", $"{mcpAggregator.GetEndpoint("http")}/mcp")
+    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-ts-layer")
+    .WithEnvironment("withPrivateRegistry", "true")
+    .WithEnvironment("TARGETPLATFORM", "linux/amd64")
+    .PublishAsDockerFile(d =>
+    {
+        d.WithImageTag("mcp-guard/typescript:latest");
+        d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
+        d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
+        d.WithDockerfile("../templates/mcp-layer-typescript");
+    })
+    .WithOtlpExporter()
+    .WithExternalHttpEndpoints()
+    .WithParentRelationship(mcpGuard);
+
 
 // Chat agent with AI Core support
 
