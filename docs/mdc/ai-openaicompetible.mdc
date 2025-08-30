@@ -1,3 +1,6 @@
+---
+title: Ai Openaicompetible
+---
 # AI SDK - OpenAI Compatible Provider
 
 This package provides a foundation for implementing providers that expose an OpenAI-compatible API.

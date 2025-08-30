@@ -1,3 +1,6 @@
+---
+title: Aspire Mainfest
+---
 .NET Aspire manifest format for deployment tool builders
 03/29/2024
 In this article, you learn about the .NET Aspire manifest format. This article serves as a reference guide for deployment tool builders, aiding in the creation of tooling to deploy .NET Aspire projects on specific hosting platforms, whether on-premises or in the cloud.
