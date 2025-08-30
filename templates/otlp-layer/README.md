@@ -20,3 +20,11 @@ Set the following environment variables as needed:
 - `PORT` – port to listen on (default `8080`)
 - `OTEL_EXPORTER_OTLP_ENDPOINT` – OTLP traces endpoint
 - `OTEL_SERVICE_NAME` – service name for telemetry
+
+## Testing
+
+Run the included Node test to verify the `/tool` endpoint responds correctly:
+
+```bash
+npm test
+```
