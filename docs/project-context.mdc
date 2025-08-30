@@ -33,7 +33,7 @@ To add a new layer as an end-to-end component:
 
 ## Running and Testing
 - Use `aspire run` to start the AppHost and all registered layers locally.
- - For tests, create a dedicated layer for the component under test and run the suite inside that layer's context using `aspire exec --resource <layer-name> -- npx vitest`. See `tests.mdc` for more details.
+ - For tests, create a dedicated layer for the component under test and run the suite inside that layer's context using `aspire exec --resource <layer-name> -- npx vitest`. See [`tests.mdc`](mdc/tests.mdc) for more details.
 
 ## Additional Rules from README
 - Review the root `README.md` for architecture details and further context.
