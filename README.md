@@ -7,12 +7,12 @@ Between the user and the MCP server, you can find the MCP Guard- a chain of mult
 
 # Resources Overview
 
-![resources.png](docs/resources.png)
+![resources.png](docs/images/resources.png)
 
 
-![graph2.png](docs/graph2.png)
+![graph2.png](docs/images/graph2.png)
 
-[//]: # (![graph.png]&#40;docs/graph.png&#41;)
+[//]: # (![graph.png]&#40;docs/images/graph.png&#41;)
 
 ----
  
@@ -37,7 +37,7 @@ Between the user and the MCP server, you can find the MCP Guard- a chain of mult
 ### MCP OAuth Layer
 > Provides MCP Proxy that handles OAuth2 authentication and token management.
 
-![oauth.png](docs/oauth.png)
+![oauth.png](docs/images/oauth.png)
 
 You can find the source code on GitHub
 
@@ -60,7 +60,7 @@ You can find the source code on GitHub
 
 > Provides MCP Proxy that evaluate and enforce fine-grained, dynamic AuthZ rules before downstream forwarding
 
-![mcp-aggregator.png](docs/guard.png)
+![mcp-aggregator.png](docs/images/guard.png)
 
 You can find the source code on GitHub
 
@@ -82,7 +82,7 @@ You can find the source code on GitHub
 
 > Aggregates multiple MCP servers into a single endpoint.
   
-![aggregator](docs/aggregator.png)
+![aggregator](docs/images/aggregator.png)
 
 You can find the source code on GitHub
 
@@ -128,7 +128,7 @@ The MCP Aggregator exposes the following endpoint:
 
 Simple basic agent API using copilotkit
 
-| ![agent-graph](docs/agent-graph.png)   |  ![agent.png](docs/agent.png)  |
+| ![agent-graph](docs/images/agent-graph.png)   |  ![agent.png](docs/images/agent.png)  |
 |---|---|
 
 
@@ -139,7 +139,7 @@ Simple basic agent API using copilotkit
 ### MCP Inspector
 To the MCP Server attached the MCP inspector, configured with the mcp-aggregator URL. This allows you to inspect the MCP server's tools and capabilities.
 
-| ![inspector.png](docs/inspector-graph.png) |  ![inspector.png](docs/inspector.png)  |
+| ![inspector.png](docs/images/inspector-graph.png) |  ![inspector.png](docs/images/inspector.png)  |
 |--------------------------------------------|---|
 
 ----
@@ -190,12 +190,12 @@ helm install aspire-ai ./helm --namespace aspire-ai --create-namespace
 ### Screenshots
 
 ##### Resource Menu 
-![policy_menu](docs/screenshots/policy-menu.png)
+![policy_menu](docs/images/screenshots/policy-menu.png)
 
 ##### Markdown Documentation
-![oauth-md.png](docs/screenshots/oauth-md.png)
+![oauth-md.png](docs/images/screenshots/oauth-md.png)
 ##### Custom Commands
-![agg.png](docs/screenshots/set-server.png)
+![agg.png](docs/images/screenshots/set-server.png)
 
 
 
