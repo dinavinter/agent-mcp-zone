@@ -46,12 +46,12 @@ To add a new layer as an end-to-end component:
 - Ensure session isolation for concurrent safety.
 - Start new layers from the language templates in `templates/`.
 
-## Technology Guides (`docs/.llm`)
-Use the `.llm` documents for technology-specific guidance:
-- `aspire-docker.md` – Add or customize Dockerfiles in Aspire AppHost.
-- `aspire-opentelemetry-mcp.md` – Integrate OpenTelemetry tracing and metrics.
-- `openai-api.md` – Interact with OpenAI APIs securely and efficiently.
-- `mcp-java.md` – Build MCP layers with Java tooling.
+## Technology Guides (`docs/mdc`)
+Use these MDC documents for technology-specific guidance:
+- `aspire-docker.mdc` – Add or customize Dockerfiles in Aspire AppHost.
+- `aspire-opentelemetry-mcp.mdc` – Integrate OpenTelemetry tracing and metrics.
+- `openai-api.mdc` – Interact with OpenAI APIs securely and efficiently.
+- `mcp-java.mdc` – Build MCP layers with Java tooling.
 - See `aspire-cli.mdc` for Aspire CLI commands and usage.
 
 Consult these resources before implementing features and keep MDC docs updated with any new rules or context.

@@ -1,5 +1,8 @@
 ---
-title: Interaction Service (Preview)
+title: Aspire Interactions
+---
+---
+title: Aspire Interactions
 description: Use the interaction service API to prompt users for input, request confirmation, and display messages in the Aspire dashboard or CLI during publish and deploy.
 ms.date: 07/21/2025
 ---

@@ -1,3 +1,6 @@
+---
+title: Mcp Java
+---
 
 # MCP Java SDK
 [![Build Status](https://github.com/modelcontextprotocol/java-sdk/actions/workflows/publish-snapshot.yml/badge.svg)](https://github.com/modelcontextprotocol/java-sdk/actions/workflows/publish-snapshot.yml)
