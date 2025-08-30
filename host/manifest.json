@@ -94,35 +94,60 @@
         }
       }
     },
-    "mcp-oauth": {
-      "type": "container.v1",
-      "build": {
-        "context": "../mcp-layers/mcp-oauth",
-        "dockerfile": "../mcp-layers/mcp-oauth/Dockerfile"
-      },
-      "env": {
-        "services__mcp-policy-guard__http__0": "{mcp-policy-guard.bindings.http.url}",
-        "PORT": "{mcp-oauth.bindings.http.targetPort}",
-        "POLICY_GUARD_URL": "{mcp-policy-guard.bindings.http.url}",
-        "OTEL_SERVICE_NAME": "mcp-oauth",
-        "withPrivateRegistry": "true",
-        "TARGETPLATFORM": "linux/amd64"
-      },
-      "bindings": {
-        "http": {
-          "scheme": "http",
-          "protocol": "tcp",
-          "transport": "http",
-          "targetPort": 8080,
-          "external": true
+      "mcp-oauth": {
+        "type": "container.v1",
+        "build": {
+          "context": "../mcp-layers/mcp-oauth",
+          "dockerfile": "../mcp-layers/mcp-oauth/Dockerfile"
+        },
+        "env": {
+          "services__mcp-policy-guard__http__0": "{mcp-policy-guard.bindings.http.url}",
+          "PORT": "{mcp-oauth.bindings.http.targetPort}",
+          "POLICY_GUARD_URL": "{mcp-policy-guard.bindings.http.url}",
+          "OTEL_SERVICE_NAME": "mcp-oauth",
+          "withPrivateRegistry": "true",
+          "TARGETPLATFORM": "linux/amd64"
+        },
+        "bindings": {
+          "http": {
+            "scheme": "http",
+            "protocol": "tcp",
+            "transport": "http",
+            "targetPort": 8080,
+            "external": true
+          }
         }
-      }
-    },
-    "chat": {
-      "type": "container.v1",
-      "build": {
-        "context": "../agents/chat",
-        "dockerfile": "../agents/chat/Dockerfile"
+      },
+      "otlp-layer": {
+        "type": "container.v1",
+        "build": {
+          "context": "../templates/otlp-layer",
+          "dockerfile": "../templates/otlp-layer/Dockerfile"
+        },
+        "env": {
+          "services__mcp-aggregator__http__0": "{mcp-aggregator.bindings.http.url}",
+          "PORT": "{otlp-layer.bindings.http.targetPort}",
+          "MCP_SERVER_URL": "{mcp-aggregator.bindings.http.url}/mcp",
+          "MCP_SERVER_TRANSPORT": "stream",
+          "OTEL_SERVICE_NAME": "otlp-layer",
+          "withPrivateRegistry": "true",
+          "TARGETPLATFORM": "linux/amd64"
+        },
+        "bindings": {
+          "http": {
+            "scheme": "http",
+            "protocol": "tcp",
+            "transport": "http",
+            "targetPort": 8070,
+            "external": true
+          }
+        }
+      },
+      "chat": {
+        "type": "container.v1",
+        "build": {
+          "context": "../agents/chat",
+          "dockerfile": "../agents/chat/Dockerfile"
       },
       "env": {
         "services__mcp-oauth__http__0": "{mcp-oauth.bindings.http.url}",
