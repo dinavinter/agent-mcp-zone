@@ -1,0 +1,73 @@
+---
+title: Layer Testing Guide
+description: Use Aspire CLI to attach test layers and run component tests with the same configuration as the AppHost.
+---
+
+# Layer Testing Guide
+
+Testing in this repository is performed through dedicated test layers that mirror the runtime environment of the component under test.
+
+## Add a test layer
+
+1. Scaffold a test project from the templates in `templates/` and register it with the AppHost.
+2. Keep test logic isolated to the layer being validated.
+3. Ensure environment variables and configuration are read from the AppHost so tests run with realistic settings.
+
+## Run tests with Aspire CLI
+
+Use the [`aspire exec`](../cli-reference/aspire-exec.md) command to run tests inside the resource's context:
+
+```bash
+aspire exec --resource <layer-name> -- npx vitest
+```
+
+- `--resource <layer-name>` selects the layer under test.
+- `--` separates Aspire CLI options from the command to execute.
+- `npx vitest` (or another test runner) is executed with the layer's environment variables and working directory.
+
+This approach ensures the test process uses the same connection strings, credentials, and paths configured for the layer at runtime.
+
+## Example MCP layer test
+
+Below is a Vitest example that exercises an MCP server through the official SDK:
+
+```ts
+import { describe, it } from 'vitest';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+
+const MCP_URL = new URL('http://localhost:8080/mcp');
+const AUTH_TOKEN = process.env.AUTH_TOKEN || 'test-token';
+
+describe('MCP router', () => {
+  it('responds to basic protocol operations', async () => {
+    const transport = new StreamableHTTPClientTransport(MCP_URL, {
+      requestInit: {
+        headers: { Authorization: `Bearer ${AUTH_TOKEN}` },
+      },
+    });
+
+    const client = new Client({ name: 'simple-tester', version: '1.0.0' });
+    await client.connect(transport);
+
+    await client.ping();
+    await client.getServerCapabilities();
+    await client.listTools();
+    await client.listResources();
+    await client.listResourceTemplates();
+    await client.listPrompts();
+
+    await client.close();
+    await transport.close();
+  });
+});
+```
+
+Run the test layer with `aspire run` and execute the test suite using the command above.
+
+## When to run tests
+
+- Run tests after implementing a new feature or fixing a bug.
+- Include tests in CI pipelines by wrapping the `aspire exec` command in automation scripts.
+
+Keep MDC docs updated as new testing patterns emerge.

@@ -1,0 +1,59 @@
+---
+title: Project Context
+---
+# agent-mcp-zone MDC
+
+This document provides project-specific context and guidelines for IDEs that support Multi-Document Context (MDC).
+
+## Project Overview
+- Reference implementation for integrating multiple Model Context Protocol (MCP) servers using Aspire AppHost.
+- Demonstrates the "MCP Guard" layering approach for authentication, policy enforcement, and aggregation.
+
+## Development Guidelines
+- Keep each layer focused on a single responsibility.
+- Use environment variables for configuration; avoid hard-coding secrets.
+- Test layers independently before chaining them together.
+- Follow MCP protocol standards and best practices.
+
+## Repository Structure
+- `host/` – ASP.NET host project and configuration files.
+- `agents/` – Example client agents, including a sample chat agent.
+- `templates/` – Language-specific templates for new MCP layers.
+- `docs/` – Documentation and diagrams.
+
+## Layer Development Workflow
+To add a new layer as an end-to-end component:
+
+1. **Scaffold** the project from the appropriate template under `templates/`.
+2. **Implement** the layer's core responsibility while keeping logic isolated.
+3. **Expose configuration APIs** (e.g., `/config`) that read and update environment-driven settings.
+4. **Provide a lightweight UI** backed by the same APIs so settings can be inspected and tweaked visually.
+5. **Register** the layer with Aspire AppHost by updating `host/app.cs` and `host/manifest.json` for chaining.
+6. **Validate** the layer in isolation, then as part of the MCP Guard chain.
+
+## Running and Testing
+- Use `aspire run` to start the AppHost and all registered layers locally.
+ - For tests, create a dedicated layer for the component under test and run the suite inside that layer's context using `aspire exec --resource <layer-name> -- npx vitest`. See `tests.mdc` for more details.
+
+## Additional Rules from README
+- Review the root `README.md` for architecture details and further context.
+- Keep layers focused on a single domain while providing the whole story.
+- Use ProxyClient for full MCP feature support.
+- Implement proper error handling and logging.
+- Use environment variables for configuration; avoid secrets.
+- Test layers independently before chaining them together.
+- Follow MCP protocol standards and best practices.
+- Ensure session isolation for concurrent safety.
+- Start new layers from the language templates in `templates/`.
+
+## Technology Guides (`docs/.llm`)
+Use the `.llm` documents for technology-specific guidance:
+- `aspire-docker.md` – Add or customize Dockerfiles in Aspire AppHost.
+- `aspire-opentelemetry-mcp.md` – Integrate OpenTelemetry tracing and metrics.
+- `openai-api.md` – Interact with OpenAI APIs securely and efficiently.
+- `mcp-java.md` – Build MCP layers with Java tooling.
+- See `aspire-cli.mdc` for Aspire CLI commands and usage.
+
+Consult these resources before implementing features and keep MDC docs updated with any new rules or context.
+
+These MDC docs act as "prompt files" for LLMs, enabling richer AI-assisted workflows within supporting IDEs.
