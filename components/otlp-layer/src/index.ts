@@ -1,3 +1,5 @@
+
+
 import { startHTTPServer, proxyServer, tapTransport } from 'mcp-proxy';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
@@ -30,22 +32,17 @@ const target = process.env.MCP_SERVER_URL || 'http://localhost:3000/mcp';
 const transportType = process.env.MCP_SERVER_TRANSPORT || 'stream';
 const port = Number(process.env.PORT) || 8080;
 
+
+const mcpServer = new Server({
+  c
+});
+
 await startHTTPServer({
   port,
-  createServer: async () => {
-    let upstream: StreamableHTTPClientTransport | SSEClientTransport | StdioClientTransport;
-    if (transportType === 'stdio') {
-      const command = process.env.MCP_SERVER_CMD || 'node';
-      const args = process.env.MCP_SERVER_ARGS ? process.env.MCP_SERVER_ARGS.split(' ') : [];
-      upstream = new StdioClientTransport({ command, args });
-    } else if (transportType === 'sse') {
-      upstream = new SSEClientTransport(new URL(target));
-    } else {
-      upstream = new StreamableHTTPClientTransport(new URL(target));
-    }
-
-    const transport = tapTransport(
-      upstream,
+  streamEndpoint: '/',
+  createServer: async () => { 
+    const tap = tapTransport(
+      new StreamableHTTPClientTransport(new URL(target)),
       (event) => {
         tracer.startActiveSpan('transport-event', span => {
           span.setAttribute('event.type', event.type);
@@ -59,16 +56,21 @@ await startHTTPServer({
         }
       }
     );
-
-    const client = new Client({ name: 'ts-proxy', version: '1.0.0' });
-    await client.connect(transport);
-    const server = new Server(client.getServerVersion()!, {
-      capabilities: client.getServerCapabilities() || {}
-    });
-    await proxyServer({ client, server, serverCapabilities: client.getServerCapabilities() || {} });
-    (server as any).upstreamClient = client;
-    return server;
+   
+    return  {
+      connect: async (transport) => { 
+        transport.onmessage = tap.onmessage;
+        transport.onerror = tap.onerror;
+        transport.onclose = tap.onclose; 
+        await tap.start();
+      },
+      close: async () => {
+        await tap.close();
+      }
+    }
+ 
   },
+  
   onClose: async (server) => {
     const client = (server as any).upstreamClient as Client | undefined;
     await client?.close();
@@ -83,7 +85,10 @@ await startHTTPServer({
   }
 });
 
+
 console.log(`OTLP layer listening on port ${port}, transport ${transportType}, proxying to ${target}`);
+
+
 
 process.on('SIGTERM', () => {
   sdk.shutdown().finally(() => process.exit(0));
@@ -92,3 +97,4 @@ process.on('SIGTERM', () => {
 function _diagSetup() {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 }
+

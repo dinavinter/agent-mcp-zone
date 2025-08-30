@@ -278,10 +278,10 @@ var mcpOAuth = builder
     });
 
 var otlpLayer = builder
-    .AddNodeApp("otlp-layer", "../templates/otlp-layer")
-    .WaitFor(mcpAggregator)
+    .AddNpmApp("otlp", "../components/otlp-layer", "dev")
+    .WaitFor(mcpOAuth)
     .WithHttpEndpoint(port: 8070, env: "PORT", name: "http")
-    .WithEnvironment("MCP_SERVER_URL", $"{mcpAggregator.GetEndpoint("http")}/mcp")
+    .WithEnvironment("MCP_SERVER_URL", mcpOAuth.GetEndpoint("http"))
     .WithEnvironment("MCP_SERVER_TRANSPORT", "stream")
     .WithEnvironment("OTEL_SERVICE_NAME", "otlp-layer")
     .WithEnvironment("withPrivateRegistry", "true")
@@ -291,7 +291,7 @@ var otlpLayer = builder
         d.WithImageTag("mcp-guard/otlp-layer:latest");
         d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
         d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
-        d.WithDockerfile("../templates/otlp-layer");
+        d.WithDockerfile("../components/otlp-layer");
     })
     .WithOtlpExporter()
     .WithExternalHttpEndpoints()
@@ -302,12 +302,12 @@ var otlpLayer = builder
 
 var chat=builder.AddDenoTask("chat", "../agents/chat", "start")
     .WaitFor(aiCoreProxy)
-    .WithReference(mcpOAuth)
-    .WaitFor(mcpOAuth)
-    .WithEnvironment("MCP_SERVER_URL", mcpOAuth.GetEndpoint("http"))
+    .WithReference(otlpLayer)
+    .WaitFor(otlpLayer)
+    .WithEnvironment("MCP_SERVER_URL", otlpLayer.GetEndpoint("http"))
     .WithEnvironment("OPENAI_BASE_URL", aiCoreProxy.GetEndpoint("http"))
     .WithEnvironment("OTEL_SERVICE_NAME", "mcp-chat")
-    .WithHttpEndpoint(env: "PORT")
+    .WithHttpEndpoint(env: "PORT", port: 9000, name: "http")
     .PublishAsDockerFile(d =>
     {
         d.WithImageTag("aspire-ai/chat:latest");

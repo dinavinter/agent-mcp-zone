@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "dev": "tsx src/main.ts --debug  --watch",
     "build": "tsc",
     "start": "node dist/main.js"
   },
@@ -15,6 +16,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.19.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.4.0"
   }
 }
