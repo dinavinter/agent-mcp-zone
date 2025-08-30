@@ -1,5 +1,5 @@
 {
-  "name": "mcp-layer-typescript",
+  "name": "otlp-layer",
   "version": "1.0.0",
   "type": "module",
   "scripts": {

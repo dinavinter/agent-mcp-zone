@@ -277,20 +277,21 @@ var mcpOAuth = builder
         return CommandResults.Success();
     });
 
-var mcpTypescript = builder
-    .AddNodeApp("typescript", "../templates/mcp-layer-typescript")
+var otlpLayer = builder
+    .AddNodeApp("otlp-layer", "../templates/otlp-layer")
     .WaitFor(mcpAggregator)
     .WithHttpEndpoint(port: 8070, env: "PORT", name: "http")
     .WithEnvironment("MCP_SERVER_URL", $"{mcpAggregator.GetEndpoint("http")}/mcp")
-    .WithEnvironment("OTEL_SERVICE_NAME", "mcp-ts-layer")
+    .WithEnvironment("MCP_SERVER_TRANSPORT", "stream")
+    .WithEnvironment("OTEL_SERVICE_NAME", "otlp-layer")
     .WithEnvironment("withPrivateRegistry", "true")
     .WithEnvironment("TARGETPLATFORM", "linux/amd64")
     .PublishAsDockerFile(d =>
     {
-        d.WithImageTag("mcp-guard/typescript:latest");
+        d.WithImageTag("mcp-guard/otlp-layer:latest");
         d.WithImageRegistry("scai-dev.common.repositories.cloud.sap");
         d.WithBuildArg("TARGETPLATFORM", "linux/amd64");
-        d.WithDockerfile("../templates/mcp-layer-typescript");
+        d.WithDockerfile("../templates/otlp-layer");
     })
     .WithOtlpExporter()
     .WithExternalHttpEndpoints()
