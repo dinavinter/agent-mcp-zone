@@ -1,24 +1,23 @@
 
 
-import { startHTTPServer, proxyServer, tapTransport } from 'mcp-proxy';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { diag, DiagConsoleLogger, DiagLogLevel, trace } from '@opentelemetry/api';
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-
+import { env } from 'process';
+import process from "node:process";
+import { InMemoryEventStore, startHTTPServer } from 'mcp-proxy';
+import { createProxyServer } from './transport-proxy.ts';
+ 
 // Setup OpenTelemetry diagnostics
 _diagSetup();
 
 const sdk = new NodeSDK({
   traceExporter: new OTLPTraceExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://aspire-dashboard:18889/v1/traces'
+    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:18889/v1/traces'
   }),
   resource: new Resource({
     [SemanticResourceAttributes.SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'otlp-layer'
@@ -27,74 +26,60 @@ const sdk = new NodeSDK({
 });
 await sdk.start();
 
-const tracer = trace.getTracer('otlp-layer');
-const target = process.env.MCP_SERVER_URL || 'http://localhost:3000/mcp';
-const transportType = process.env.MCP_SERVER_TRANSPORT || 'stream';
-const port = Number(process.env.PORT) || 8080;
-
-
-const mcpServer = new Server({
-  c
-});
-
-await startHTTPServer({
-  port,
-  streamEndpoint: '/',
-  createServer: async () => { 
-    const tap = tapTransport(
-      new StreamableHTTPClientTransport(new URL(target)),
-      (event) => {
-        tracer.startActiveSpan('transport-event', span => {
-          span.setAttribute('event.type', event.type);
-          span.end();
-        });
-        if (event.type === 'onmessage') {
-          const msg = event.message as any;
-          if (msg.result && typeof msg.result === 'object') {
-            msg.result.proxyProcessed = true;
-          }
-        }
-      }
-    );
-   
-    return  {
-      connect: async (transport) => { 
-        transport.onmessage = tap.onmessage;
-        transport.onerror = tap.onerror;
-        transport.onclose = tap.onclose; 
-        await tap.start();
-      },
-      close: async () => {
-        await tap.close();
-      }
-    }
  
-  },
-  
-  onClose: async (server) => {
-    const client = (server as any).upstreamClient as Client | undefined;
-    await client?.close();
-  },
-  onUnhandledRequest: async (req, res) => {
-    if (req.url === '/tool') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'Hello from OTLP layer tool!' }));
-    } else {
-      res.writeHead(404).end();
-    }
-  }
-});
+const createGracefulShutdown = ({
+  server,
+  timeout,
+}: {
+  server: Pick<Server, "close"> 
+  timeout: number;
+}) => {
+  const gracefulShutdown =async () => {
+    console.info("received shutdown signal; shutting down");
+    
+    // timeout to force exit
+    setTimeout(() => {
+      process.exit(1);
+    }, timeout);
+
+    await server.close();
+    await sdk.shutdown();
+  };
+ 
+  process.once("SIGTERM", gracefulShutdown);
+  process.once("SIGINT", gracefulShutdown);
 
 
-console.log(`OTLP layer listening on port ${port}, transport ${transportType}, proxying to ${target}`);
+};
 
+const main = async () => {
+  try { 
+    createGracefulShutdown({
+      server: await startHTTPServer({
+        createServer: createProxyServer,
+        eventStore: new InMemoryEventStore(),
+        host: env.HOST || "0.0.0.0",
+        port: Number(env.PORT || "8080"),
+        streamEndpoint: "/",
+        enableJsonResponse: true
+    }),
+      timeout: env.SHUTDOWN_TIMEOUT
+        ? Number(env.SHUTDOWN_TIMEOUT)
+        : 10_000,
+    });
+  } catch (error) {
+    console.error("could not start the proxy", error); 
+    // We give an extra second for logs to flush
+    setTimeout(() => {
+      process.exit(1);
+    }, 1000);
+  } 
+};
 
-
-process.on('SIGTERM', () => {
-  sdk.shutdown().finally(() => process.exit(0));
-});
 
 function _diagSetup() {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 }
 
+
+await main();

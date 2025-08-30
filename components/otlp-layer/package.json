@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/main.ts --debug  --watch",
+    "dev": "tsx watch src/index.ts --debug --experimental-specifier-resolution=node ",
     "build": "tsc",
     "start": "node dist/main.js"
   },

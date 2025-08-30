@@ -282,7 +282,7 @@ var otlpLayer = builder
     .WaitFor(mcpOAuth)
     .WithHttpEndpoint(port: 8070, env: "PORT", name: "http")
     .WithEnvironment("MCP_SERVER_URL", mcpOAuth.GetEndpoint("http"))
-    .WithEnvironment("MCP_SERVER_TRANSPORT", "stream")
+    .WithEnvironment("MCP_SERVER_TRANSPORT", "streamable-http")
     .WithEnvironment("OTEL_SERVICE_NAME", "otlp-layer")
     .WithEnvironment("withPrivateRegistry", "true")
     .WithEnvironment("TARGETPLATFORM", "linux/amd64")
